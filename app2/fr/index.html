@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Comparator - Analyse de Signaux</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-corr {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-corr:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-mi {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-mi:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-energy {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-energy:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-export {
+            background: #9b59b6;
+            color: white;
+            border: 2px solid #9b59b6;
+        }
+
+        .btn-export:hover:not(:disabled) {
+            background: #8e44ad;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
+        }
+
+        .btn-export:disabled {
+            background: #bdc3c7;
+            border-color: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .separator {
+            width: 1px;
+            height: 30px;
+            background: #ddd;
+            margin: 0 5px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Main Content */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            transition: padding-bottom 0.3s ease;
+        }
+
+        .signals-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .signal-panel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .signal-panel:hover {
+            transform: translateY(-2px);
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .signal-title {
+            font-weight: 700;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-info {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .drop-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 3px dashed #cbd5e0;
+            margin: 20px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: scale(1.01);
+        }
+
+        .drop-zone.has-data {
+            border-style: solid;
+            border-color: #27ae60;
+            background: #f0fff4;
+            cursor: default;
+        }
+
+        .drop-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.3;
+        }
+
+        .drop-text {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .drop-subtext {
+            color: #95a5a6;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .chart-container {
+            flex: 1;
+            position: relative;
+            display: none;
+            padding: 10px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .clear-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .signal-panel:hover .clear-btn {
+            opacity: 1;
+        }
+
+        /* Footer Results */
+        .footer {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 20px 30px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .footer.collapsed {
+            min-height: 40px;
+            padding: 10px 30px;
+        }
+
+        .footer.collapsed .results-container {
+            display: none;
+        }
+
+        .footer.collapsed .footer-toggle {
+            position: static;
+            transform: none;
+        }
+
+        .footer-toggle {
+            position: absolute;
+            top: -15px;
+            right: 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .footer-toggle:hover {
+            transform: translateY(-2px);
+            background: #764ba2;
+        }
+
+        .results-container {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            min-width: 200px;
+            text-align: center;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+        }
+
+        .result-value.good {
+            color: #27ae60;
+        }
+
+        .result-value.medium {
+            color: #f39c12;
+        }
+
+        .result-value.low {
+            color: #e74c3c;
+        }
+
+        .waiting-text {
+            color: #95a5a6;
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-top: 4px;
+        }
+
+        .collapsed-hint {
+            display: none;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .footer.collapsed .collapsed-hint {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            button {
+                font-size: 0.8rem;
+                padding: 8px 15px;
+            }
+
+            .separator {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo">
+            <span>📊</span>
+            <span>Signal Comparator</span>
+        </div>
+        <div class="controls">
+            <button class="btn-corr" onclick="calculateCorrelation()" id="btnCorr" disabled>
+                <span>🔗</span> Intercorrélation
+            </button>
+            <button class="btn-mi" onclick="calculateMutualInfo()" id="btnMI" disabled>
+                <span>ℹ️</span> Information Mutuelle
+            </button>
+            <button class="btn-energy" onclick="calculateEnergyRatio()" id="btnEnergy" disabled>
+                <span>⚡</span> Ratio d'Énergie
+            </button>
+            <div class="separator"></div>
+            <button class="btn-export" onclick="exportToCSV()" id="btnExport" disabled title="Exporter tous les résultats en CSV">
+                <span>📥</span> Exporter CSV
+            </button>
+        </div>
+    </header>
+
+    <main class="main-container" id="mainContainer">
+        <div class="signals-wrapper">
+            <!-- Signal 1 -->
+            <div class="signal-panel" id="panel1">
+                <div class="panel-header">
+                    <div class="signal-title">
+                        <span>📈</span>
+                        <span>Signal A</span>
+                    </div>
+                    <div class="file-info" id="info1">Aucun fichier chargé</div>
+                </div>
+                <div class="drop-zone" id="dropZone1" onclick="document.getElementById('file1').click()">
+                    <div class="drop-icon">📁</div>
+                    <div class="drop-text">Glissez un fichier CSV ici ou cliquez pour parcourir</div>
+                    <div class="drop-subtext">Format: 1 colonne (valeurs) ou 2 colonnes (temps, valeurs)</div>
+                </div>
+                <input type="file" id="file1" accept=".csv,.txt" onchange="handleFile(event, 1)">
+                <div class="chart-container" id="chartContainer1">
+                    <button class="clear-btn" onclick="clearData(1); event.stopPropagation();">✕ Supprimer</button>
+                    <canvas id="canvas1"></canvas>
+                </div>
+            </div>
+
+            <!-- Signal 2 -->
+            <div class="signal-panel" id="panel2">
+                <div class="panel-header">
+                    <div class="signal-title">
+                        <span>📉</span>
+                        <span>Signal B</span>
+                    </div>
+                    <div class="file-info" id="info2">Aucun fichier chargé</div>
+                </div>
+                <div class="drop-zone" id="dropZone2" onclick="document.getElementById('file2').click()">
+                    <div class="drop-icon">📁</div>
+                    <div class="drop-text">Glissez un fichier CSV ici ou cliquez pour parcourir</div>
+                    <div class="drop-subtext">Format: 1 colonne (valeurs) ou 2 colonnes (temps, valeurs)</div>
+                </div>
+                <input type="file" id="file2" accept=".csv,.txt" onchange="handleFile(event, 2)">
+                <div class="chart-container" id="chartContainer2">
+                    <button class="clear-btn" onclick="clearData(2); event.stopPropagation();">✕ Supprimer</button>
+                    <canvas id="canvas2"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer" id="footer">
+        <button class="footer-toggle" onclick="toggleFooter()" title="Réduire/Agrandir">−</button>
+        <div class="results-container" id="results">
+            <div class="waiting-text">Chargez deux signaux pour commencer l'analyse...</div>
+        </div>
+        <div class="collapsed-hint">Résultats masqués - cliquez sur + pour afficher</div>
+    </footer>
+
+    <script>
+        // Stockage des données
+        let signalData = {
+            1: null,
+            2: null
+        };
+
+        // Stockage des résultats pour export
+        let lastResults = {
+            correlation: null,
+            mutualInfo: null,
+            energy: null
+        };
+
+        // État du footer
+        let isFooterCollapsed = false;
+
+        function toggleFooter() {
+            const footer = document.getElementById('footer');
+            const toggleBtn = footer.querySelector('.footer-toggle');
+            const mainContainer = document.getElementById('mainContainer');
+            
+            isFooterCollapsed = !isFooterCollapsed;
+            
+            if (isFooterCollapsed) {
+                footer.classList.add('collapsed');
+                toggleBtn.textContent = '+';
+                toggleBtn.title = 'Agrandir';
+                mainContainer.style.paddingBottom = '10px';
+            } else {
+                footer.classList.remove('collapsed');
+                toggleBtn.textContent = '−';
+                toggleBtn.title = 'Réduire';
+                mainContainer.style.paddingBottom = '20px';
+            }
+        }
+
+        // Gestion du Drag & Drop
+        ['dropZone1', 'dropZone2'].forEach((id, idx) => {
+            const zone = document.getElementById(id);
+            const num = idx + 1;
+            
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+            
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    processFile(files[0], num);
+                }
+            });
+        });
+
+        function handleFile(event, num) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file, num);
+            }
+        }
+
+        function processFile(file, num) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const data = parseCSV(content);
+                
+                if (data.length === 0) {
+                    alert('Erreur: Fichier vide ou format invalide');
+                    return;
+                }
+                
+                signalData[num] = data;
+                displaySignal(num, data);
+                updateUI();
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(content) {
+            const lines = content.trim().split('\n');
+            const data = [];
+            
+            // Détection du séparateur (virgule ou point-virgule)
+            const firstLine = lines[0];
+            const separator = firstLine.includes(';') ? ';' : ',';
+            
+            for (let line of lines) {
+                const parts = line.split(separator).map(p => parseFloat(p.trim().replace(',', '.')));
+                
+                if (parts.length >= 2 && !isNaN(parts[1])) {
+                    // Format: temps, valeur
+                    data.push({ t: parts[0], y: parts[1] });
+                } else if (parts.length === 1 && !isNaN(parts[0])) {
+                    // Format: valeur uniquement (index implicite)
+                    data.push({ t: data.length, y: parts[0] });
+                }
+            }
+            
+            return data;
+        }
+
+        function displaySignal(num, data) {
+            const dropZone = document.getElementById(`dropZone${num}`);
+            const chartContainer = document.getElementById(`chartContainer${num}`);
+            const info = document.getElementById(`info${num}`);
+            
+            dropZone.style.display = 'none';
+            chartContainer.style.display = 'block';
+            
+            // Mettre à jour les infos
+            info.textContent = `${data.length} points | Min: ${Math.min(...data.map(d => d.y)).toFixed(3)} | Max: ${Math.max(...data.map(d => d.y)).toFixed(3)}`;
+            
+            // Dessiner le graphe
+            drawChart(num, data);
+        }
+
+        function drawChart(num, data) {
+            const canvas = document.getElementById(`canvas${num}`);
+            const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
+            
+            // Redimensionnement
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+            
+            // Calcul des min/max
+            const yValues = data.map(d => d.y);
+            const minY = Math.min(...yValues);
+            const maxY = Math.max(...yValues);
+            const rangeY = maxY - minY || 1;
+            
+            // Effacer
+            ctx.clearRect(0, 0, width, height);
+            
+            // Grille
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (height - 2 * padding) * i / 4;
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+            }
+            ctx.stroke();
+            
+            // Courbe
+            ctx.strokeStyle = num === 1 ? '#3498db' : '#e74c3c';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            data.forEach((point, i) => {
+                const x = padding + (width - 2 * padding) * i / (data.length - 1);
+                const y = height - padding - ((point.y - minY) / rangeY) * (height - 2 * padding);
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            
+            ctx.stroke();
+            
+            // Points
+            ctx.fillStyle = num === 1 ? '#3498db' : '#e74c3c';
+            data.forEach((point, i) => {
+                if (i % Math.ceil(data.length / 50) === 0) { // Afficher quelques points seulement
+                    const x = padding + (width - 2 * padding) * i / (data.length - 1);
+                    const y = height - padding - ((point.y - minY) / rangeY) * (height - 2 * padding);
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            });
+            
+            // Axes
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+            
+            // Labels Y
+            ctx.fillStyle = '#7f8c8d';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const val = maxY - (rangeY * i / 4);
+                const y = padding + (height - 2 * padding) * i / 4;
+                ctx.fillText(val.toFixed(2), padding - 10, y + 4);
+            }
+        }
+
+        function clearData(num) {
+            signalData[num] = null;
+            document.getElementById(`dropZone${num}`).style.display = 'flex';
+            document.getElementById(`chartContainer${num}`).style.display = 'none';
+            document.getElementById(`info${num}`).textContent = 'Aucun fichier chargé';
+            document.getElementById(`file${num}`).value = '';
+            
+            // Reset results when clearing data
+            lastResults = { correlation: null, mutualInfo: null, energy: null };
+            updateUI();
+        }
+
+        function updateUI() {
+            const hasBoth = signalData[1] && signalData[2];
+            document.getElementById('btnCorr').disabled = !hasBoth;
+            document.getElementById('btnMI').disabled = !hasBoth;
+            document.getElementById('btnEnergy').disabled = !hasBoth;
+            
+            // Enable export only if at least one calculation has been done
+            const hasResults = lastResults.correlation !== null || 
+                              lastResults.mutualInfo !== null || 
+                              lastResults.energy !== null;
+            document.getElementById('btnExport').disabled = !hasResults;
+            
+            if (!hasBoth) {
+                document.getElementById('results').innerHTML = 
+                    '<div class="waiting-text">Chargez deux signaux pour commencer l\'analyse...</div>';
+            }
+        }
+
+        // Redimensionnement des graphes
+        window.addEventListener('resize', () => {
+            if (signalData[1]) drawChart(1, signalData[1]);
+            if (signalData[2]) drawChart(2, signalData[2]);
+        });
+
+        // ===== CALCULS MATHEMATIQUES =====
+
+        function getAlignedSignals() {
+            let s1 = signalData[1].map(d => d.y);
+            let s2 = signalData[2].map(d => d.y);
+            
+            // Alignement sur la longueur la plus courte
+            const minLen = Math.min(s1.length, s2.length);
+            s1 = s1.slice(0, minLen);
+            s2 = s2.slice(0, minLen);
+            
+            return [s1, s2];
+        }
+
+        function calculateCorrelation() {
+            const [s1, s2] = getAlignedSignals();
+            const n = s1.length;
+            
+            const mean1 = s1.reduce((a, b) => a + b, 0) / n;
+            const mean2 = s2.reduce((a, b) => a + b, 0) / n;
+            
+            let num = 0;
+            let den1 = 0;
+            let den2 = 0;
+            
+            for (let i = 0; i < n; i++) {
+                const diff1 = s1[i] - mean1;
+                const diff2 = s2[i] - mean2;
+                num += diff1 * diff2;
+                den1 += diff1 * diff1;
+                den2 += diff2 * diff2;
+            }
+            
+            const r = num / Math.sqrt(den1 * den2);
+            
+            // Stockage pour export
+            lastResults.correlation = {
+                value: r,
+                strength: Math.abs(r) > 0.7 ? 'Forte' : (Math.abs(r) > 0.4 ? 'Modérée' : 'Faible'),
+                direction: r > 0 ? 'Positive' : 'Négative'
+            };
+            
+            updateUI(); // Pour activer le bouton export
+            displayResult('correlation', r);
+        }
+
+        function calculateMutualInfo() {
+            const [s1, s2] = getAlignedSignals();
+            const n = s1.length;
+            
+            // Binning pour estimation de l'information mutuelle
+            const bins = Math.floor(Math.sqrt(n / 5)); // Règle de Sturges approx
+            const binned1 = binData(s1, bins);
+            const binned2 = binData(s2, bins);
+            
+            // Calcul des distributions jointes et marginales
+            const joint = {};
+            const marginal1 = {};
+            const marginal2 = {};
+            
+            for (let i = 0; i < n; i++) {
+                const key = `${binned1[i]},${binned2[i]}`;
+                joint[key] = (joint[key] || 0) + 1;
+                marginal1[binned1[i]] = (marginal1[binned1[i]] || 0) + 1;
+                marginal2[binned2[i]] = (marginal2[binned2[i]] || 0) + 1;
+            }
+            
+            // Calcul I(A;B) = sum p(x,y) log(p(x,y)/(p(x)p(y)))
+            let mi = 0;
+            
+            for (let key in joint) {
+                const pxy = joint[key] / n;
+                const [x, y] = key.split(',').map(Number);
+                const px = marginal1[x] / n;
+                const py = marginal2[y] / n;
+                mi += pxy * Math.log2(pxy / (px * py));
+            }
+            
+            // Calcul de la valeur normalisée pour l'affichage
+            const normalizedMI = mi / Math.log2(bins);
+            
+            // Stockage pour export
+            lastResults.mutualInfo = {
+                value: mi,
+                normalized: normalizedMI,
+                dependency: mi > 1 ? 'Forte' : (mi > 0.5 ? 'Modérée' : 'Faible'),
+                bins: bins
+            };
+            
+            updateUI(); // Pour activer le bouton export
+            displayResult('mutualinfo', mi, normalizedMI);
+        }
+
+        function binData(data, numBins) {
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = max - min || 1;
+            return data.map(v => Math.min(Math.floor((v - min) / range * numBins), numBins - 1));
+        }
+
+        function calculateEnergyRatio() {
+            const [s1, s2] = getAlignedSignals();
+            
+            // Calcul RMS
+            const rms1 = Math.sqrt(s1.reduce((sum, v) => sum + v * v, 0) / s1.length);
+            const rms2 = Math.sqrt(s2.reduce((sum, v) => sum + v * v, 0) / s2.length);
+            
+            // Ratio d'énergie (RMS1² / RMS2²)
+            const ratio = (rms1 * rms1) / (rms2 * rms2);
+            const db = 10 * Math.log10(ratio); // Conversion en dB optionnelle
+            
+            // Stockage pour export
+            lastResults.energy = {
+                rmsA: rms1,
+                rmsB: rms2,
+                ratio: ratio,
+                db: db,
+                percent: ratio * 100
+            };
+            
+            updateUI(); // Pour activer le bouton export
+            displayResult('energy', { rms1, rms2, ratio, db });
+        }
+
+        function displayResult(type, value, extraValue = null) {
+            const container = document.getElementById('results');
+            
+            // S'assurer que le footer est ouvert quand on affiche un résultat
+            if (isFooterCollapsed) {
+                toggleFooter();
+            }
+            
+            if (type === 'correlation') {
+                const absR = Math.abs(value);
+                let colorClass = absR > 0.7 ? 'good' : (absR > 0.4 ? 'medium' : 'low');
+                
+                container.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-label">Coefficient de Corrélation (r)</div>
+                        <div class="result-value ${colorClass}">${value.toFixed(4)}</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Force</div>
+                            <div class="stat-value">${absR > 0.7 ? 'Forte' : (absR > 0.4 ? 'Modérée' : 'Faible')}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Direction</div>
+                            <div class="stat-value">${value > 0 ? 'Positive' : 'Négative'}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'mutualinfo') {
+                container.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-label">Information Mutuelle I(A;B)</div>
+                        <div class="result-value">${value.toFixed(4)} bits</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Dépendance</div>
+                            <div class="stat-value">${value > 1 ? 'Forte' : (value > 0.5 ? 'Modérée' : 'Faible')}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Normalisée [0-1]</div>
+                            <div class="stat-value">${extraValue ? extraValue.toFixed(3) : '-'}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'energy') {
+                const { rms1, rms2, ratio, db } = value;
+                const percent = (ratio * 100).toFixed(1);
+                
+                container.innerHTML = `
+                    <div class="result-box">
+                        <div class="result-label">Ratio d'Énergie (RMS_A²/RMS_B²)</div>
+                        <div class="result-value">${ratio.toFixed(4)}</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">RMS Signal A</div>
+                            <div class="stat-value">${rms1.toFixed(4)}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">RMS Signal B</div>
+                            <div class="stat-value">${rms2.toFixed(4)}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Différence (dB)</div>
+                            <div class="stat-value">${db.toFixed(2)} dB</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Énergie A vs B</div>
+                            <div class="stat-value">${percent}%</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ===== EXPORT CSV =====
+        function exportToCSV() {
+            if (!lastResults.correlation && !lastResults.mutualInfo && !lastResults.energy) {
+                alert('Aucun résultat à exporter. Veuillez d\'abord effectuer au moins un calcul.');
+                return;
+            }
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // En-tête
+            csvContent += "Analyse de Signaux - Export des résultats\n";
+            csvContent += `Date,${new Date().toLocaleString()}\n`;
+            csvContent += `Points Signal A,${signalData[1] ? signalData[1].length : 0}\n`;
+            csvContent += `Points Signal B,${signalData[2] ? signalData[2].length : 0}\n\n`;
+            
+            // Section 1: Intercorrélation
+            csvContent += "METRIQUE,VALEUR,UNITE,DETAILS\n";
+            if (lastResults.correlation) {
+                csvContent += `Intercorrélation (r),${lastResults.correlation.value.toFixed(6)},,Force: ${lastResults.correlation.strength}; Direction: ${lastResults.correlation.direction}\n`;
+            } else {
+                csvContent += "Intercorrélation (r),Non calculé,,\n";
+            }
+            
+            // Section 2: Information Mutuelle
+            if (lastResults.mutualInfo) {
+                csvContent += `Information Mutuelle I(A;B),${lastResults.mutualInfo.value.toFixed(6)},bits,Dépendance: ${lastResults.mutualInfo.dependency}; Bins: ${lastResults.mutualInfo.bins}; Normalisée: ${lastResults.mutualInfo.normalized.toFixed(6)}\n`;
+            } else {
+                csvContent += "Information Mutuelle I(A;B),Non calculé,bits,\n";
+            }
+            
+            // Section 3: Ratio d'Énergie
+            if (lastResults.energy) {
+                csvContent += `Ratio d'Énergie (RMS_A²/RMS_B²),${lastResults.energy.ratio.toFixed(6)},,RMS A: ${lastResults.energy.rmsA.toFixed(6)}; RMS B: ${lastResults.energy.rmsB.toFixed(6)}\n`;
+                csvContent += `Différence d'énergie (dB),${lastResults.energy.db.toFixed(6)},dB,Énergie A représente ${lastResults.energy.percent.toFixed(2)}% de B\n`;
+            } else {
+                csvContent += "Ratio d'Énergie,Non calculé,,\n";
+            }
+            
+            // Téléchargement
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `signaux_analyse_${timestamp}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
