@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur Chaînes de Markov</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        h1 {
+            color: #4a5568;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 28px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .drop-zone {
+            border: 3px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 60px 40px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f7fafc;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #667eea;
+            background: #edf2f7;
+            transform: scale(1.02);
+        }
+
+        .drop-zone-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .drop-zone-text {
+            font-size: 18px;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .drop-zone-hint {
+            font-size: 14px;
+            color: #a0aec0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 20px;
+            padding: 16px;
+            background: #e6fffa;
+            border-left: 4px solid #38b2ac;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .file-info.show {
+            display: flex;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status.show {
+            display: flex;
+        }
+
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #48bb78;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #f56565;
+        }
+
+        .preview-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .preview-section.show {
+            display: block;
+        }
+
+        .preview-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2d3748;
+        }
+
+        .data-preview {
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 400px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        .modal-input-group {
+            margin-bottom: 24px;
+        }
+
+        .modal-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-cancel:hover {
+            background: #cbd5e0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                <span class="icon">🔗</span>
+                Générateur de Chaînes de Markov
+            </h1>
+            <div class="button-group">
+                <button id="btnMatrix" class="btn-primary" disabled onclick="generateTransitionMatrix()">
+                    <span>📊</span> Générer Matrice de Transition
+                </button>
+                <button id="btnSequence" class="btn-secondary" disabled onclick="openModal()">
+                    <span>🎲</span> Générer Suite
+                </button>
+            </div>
+        </header>
+
+        <section class="upload-section">
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="drop-zone-icon">📁</div>
+                <div class="drop-zone-text">Glissez-déposez votre fichier CSV ici</div>
+                <div class="drop-zone-hint">ou cliquez pour sélectionner un fichier</div>
+            </div>
+            <input type="file" id="fileInput" accept=".csv,.txt" onchange="handleFileSelect(event)">
+            
+            <div id="fileInfo" class="file-info">
+                <span>📄</span>
+                <div>
+                    <strong id="fileName"></strong><br>
+                    <small id="fileSize"></small>
+                </div>
+            </div>
+
+            <div id="status" class="status"></div>
+        </section>
+
+        <section id="previewSection" class="preview-section">
+            <div class="preview-title">Aperçu des données</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">États uniques</div>
+                    <div class="stat-value" id="uniqueStates">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Transitions</div>
+                    <div class="stat-value" id="totalTransitions">0</div>
+                </div>
+            </div>
+            <div class="data-preview">
+                <table id="previewTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal pour la génération de suite -->
+    <div id="modal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-title">Générer une séquence</div>
+            <div class="modal-input-group">
+                <label class="modal-label">Nombre de points à générer</label>
+                <input type="number" id="pointsCount" class="modal-input" value="100" min="1" max="10000">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+                <button class="btn-secondary" onclick="generateSequence()">
+                    <span>✓</span> OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let csvData = [];
+        let headers = [];
+        let states = [];
+        let transitionMatrix = {};
+        let selectedColumn = null;
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const btnMatrix = document.getElementById('btnMatrix');
+        const btnSequence = document.getElementById('btnSequence');
+
+        // Drag and drop handlers
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
+                showStatus('Veuillez sélectionner un fichier CSV valide', 'error');
+                return;
+            }
+
+            // Afficher les infos du fichier
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('fileInfo').classList.add('show');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    parseCSV(e.target.result);
+                    showStatus('Fichier chargé avec succès !', 'success');
+                    btnMatrix.disabled = false;
+                    btnSequence.disabled = false;
+                } catch (error) {
+                    showStatus('Erreur lors du parsing du CSV: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) throw new Error('Fichier CSV vide ou invalide');
+
+            headers = parseCSVLine(lines[0]);
+            csvData = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length === headers.length) {
+                    const row = {};
+                    headers.forEach((h, idx) => row[h] = values[idx]);
+                    csvData.push(row);
+                }
+            }
+
+            // Détecter automatiquement la colonne à utiliser (première colonne par défaut)
+            selectedColumn = headers[0];
+            
+            // Extraire les états
+            const stateSet = new Set();
+            csvData.forEach(row => {
+                const val = row[selectedColumn];
+                if (val !== undefined && val !== '') {
+                    stateSet.add(val);
+                }
+            });
+            states = Array.from(stateSet);
+
+            updatePreview();
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function updatePreview() {
+            document.getElementById('uniqueStates').textContent = states.length;
+            document.getElementById('totalTransitions').textContent = csvData.length - 1;
+            
+            const table = document.getElementById('previewTable');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            thead.innerHTML = '<tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>';
+            
+            tbody.innerHTML = csvData.slice(0, 10).map(row => 
+                '<tr>' + headers.map(h => `<td>${escapeHtml(row[h] || '')}</td>`).join('') + '</tr>'
+            ).join('');
+            
+            if (csvData.length > 10) {
+                tbody.innerHTML += `<tr><td colspan="${headers.length}" style="text-align:center;color:#718096;font-style:italic;">... et ${csvData.length - 10} lignes supplémentaires</td></tr>`;
+            }
+            
+            document.getElementById('previewSection').classList.add('show');
+        }
+
+        function buildTransitionMatrix() {
+            transitionMatrix = {};
+            const stateCounts = {};
+            
+            // Initialiser la matrice
+            states.forEach(s1 => {
+                transitionMatrix[s1] = {};
+                stateCounts[s1] = 0;
+                states.forEach(s2 => {
+                    transitionMatrix[s1][s2] = 0;
+                });
+            });
+
+            // Compter les transitions
+            for (let i = 0; i < csvData.length - 1; i++) {
+                const current = csvData[i][selectedColumn];
+                const next = csvData[i + 1][selectedColumn];
+                
+                if (transitionMatrix[current] && transitionMatrix[current][next] !== undefined) {
+                    transitionMatrix[current][next]++;
+                    stateCounts[current]++;
+                }
+            }
+
+            // Convertir en probabilités
+            states.forEach(s1 => {
+                states.forEach(s2 => {
+                    if (stateCounts[s1] > 0) {
+                        transitionMatrix[s1][s2] = transitionMatrix[s1][s2] / stateCounts[s1];
+                    } else {
+                        transitionMatrix[s1][s2] = 0;
+                    }
+                });
+            });
+
+            return transitionMatrix;
+        }
+
+        function generateTransitionMatrix() {
+            try {
+                buildTransitionMatrix();
+                
+                // Créer le CSV de la matrice
+                let csv = 'Etat,' + states.join(',') + '\n';
+                states.forEach(s1 => {
+                    const row = [s1];
+                    states.forEach(s2 => {
+                        row.push(transitionMatrix[s1][s2].toFixed(6));
+                    });
+                    csv += row.join(',') + '\n';
+                });
+
+                downloadCSV(csv, 'matrice_transition.csv');
+                showStatus('Matrice de transition générée et téléchargée !', 'success');
+            } catch (error) {
+                showStatus('Erreur: ' + error.message, 'error');
+            }
+        }
+
+        function generateSequence() {
+            const count = parseInt(document.getElementById('pointsCount').value);
+            if (!count || count < 1) {
+                showStatus('Veuillez entrer un nombre valide', 'error');
+                return;
+            }
+
+            try {
+                buildTransitionMatrix();
+                
+                // Choisir un état initial aléatoire parmi les états disponibles
+                let currentState = states[Math.floor(Math.random() * states.length)];
+                const sequence = [currentState];
+
+                for (let i = 1; i < count; i++) {
+                    const probs = transitionMatrix[currentState];
+                    const nextState = weightedRandomChoice(probs);
+                    sequence.push(nextState);
+                    currentState = nextState;
+                }
+
+                // Créer le CSV
+                let csv = 'Index,Valeur\n';
+                sequence.forEach((val, idx) => {
+                    csv += `${idx + 1},${val}\n`;
+                });
+
+                downloadCSV(csv, 'sequence_markov.csv');
+                closeModal();
+                showStatus(`Séquence de ${count} points générée et téléchargée !`, 'success');
+            } catch (error) {
+                showStatus('Erreur: ' + error.message, 'error');
+            }
+        }
+
+        function weightedRandomChoice(probabilities) {
+            const r = Math.random();
+            let cumsum = 0;
+            
+            for (const [state, prob] of Object.entries(probabilities)) {
+                cumsum += prob;
+                if (r <= cumsum) return state;
+            }
+            
+            // Fallback si les probabilités ne somment pas exactement à 1
+            return states[Math.floor(Math.random() * states.length)];
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        function openModal() {
+            document.getElementById('modal').classList.add('show');
+            document.getElementById('pointsCount').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        function closeModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeModal();
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status show ${type}`;
+            
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 5000);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Fermer la modal avec Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Enter' && document.getElementById('modal').classList.contains('show')) {
+                generateSequence();
+            }
+        });
+    </script>
+</body>
+</html>
