@@ -2,1643 +2,408 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>IQI Analyser</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Apps</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:#1a1a2e;color:#e0e0e0;font-family:'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-  #topbar{background:#16213e;padding:6px 10px;display:flex;align-items:center;gap:7px;border-bottom:1px solid #0f3460;flex-shrink:0;flex-wrap:wrap;}
-  #topbar h1{font-size:.88rem;color:#e94560;letter-spacing:1px;margin-right:auto;}
-  .btn{background:#0f3460;color:#e0e0e0;border:1px solid #e94560;padding:4px 9px;border-radius:4px;cursor:pointer;font-size:.76rem;transition:background .2s;white-space:nowrap;}
-  .btn:hover{background:#e94560;}.btn:disabled{opacity:.35;cursor:default;}.btn.active{background:#e94560;}
-  .sep{width:1px;height:20px;background:#334;flex-shrink:0;}
-  #info{font-size:.69rem;color:#aaa;}
-  #main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-  #img-panel{flex:1;overflow:auto;padding:8px;position:relative;min-height:0;}
-  #imgCanvas{cursor:crosshair;display:block;image-rendering:pixelated;}
-  #lineCanvas{position:absolute;top:8px;left:8px;pointer-events:none;image-rendering:pixelated;}
-  #drop-zone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#555;pointer-events:none;}
-  #drop-zone.hidden{display:none;}
-  .drop-icon{font-size:3rem;margin-bottom:10px;}
-  #graph-panel{background:#0d0d20;border-top:2px solid #0f3460;flex-shrink:0;height:260px;display:flex;flex-direction:column;transition:height .25s;}
-  #graph-panel.collapsed{height:26px;}
-  #graph-header{display:flex;align-items:center;gap:8px;padding:3px 10px;background:#16213e;flex-shrink:0;user-select:none;}
-  #graph-toggle-btn{cursor:pointer;display:flex;align-items:center;gap:6px;}
-  #graph-header span.gi{font-size:.74rem;color:#aaa;}
-  #graph-title{font-size:.76rem;color:#e94560;font-weight:600;}
-  #graphCanvas{flex:1;width:100%;display:block;min-height:0;}
-  #toolinfo{background:#0f1a30;border-bottom:1px solid #0f3460;padding:3px 14px;font-size:.72rem;color:#7a9cc5;flex-shrink:0;display:flex;align-items:center;gap:7px;min-height:22px;}
-  #legend-bar{background:#16213e;border-top:1px solid #0f3460;padding:3px 14px;display:flex;align-items:center;gap:14px;flex-shrink:0;flex-wrap:wrap;}
-  .leg{display:flex;align-items:center;gap:5px;font-size:.71rem;color:#aaa;}
-  #statusbar{background:#16213e;padding:4px 12px;font-size:.7rem;color:#aaa;border-top:1px solid #0f3460;flex-shrink:0;}
-  input[type=range]{width:65px;accent-color:#e94560;vertical-align:middle;}
-  input[type=number]{background:#0f3460;border:1px solid #444;color:#e0e0e0;padding:2px 5px;border-radius:3px;width:55px;font-size:.76rem;text-align:center;}
-  label{font-size:.73rem;color:#aaa;}
-  #modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center;}
-  #modal.show{display:flex;}
-  #modal-box{background:#16213e;border:1px solid #e94560;border-radius:8px;padding:22px 26px;min-width:280px;display:flex;flex-direction:column;gap:11px;}
-  #modal-box h2{color:#e94560;font-size:.93rem;}
-  .modal-row{display:flex;align-items:center;gap:9px;}
-  .modal-btns{display:flex;gap:8px;justify-content:flex-end;}
-  #toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.95);background:rgba(15,20,40,.92);border:1px solid #e94560;color:#e0e0e0;padding:14px 28px;border-radius:8px;font-size:.92rem;font-weight:600;pointer-events:none;opacity:0;transition:opacity .3s,transform .3s;z-index:200;text-align:center;}
-  #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f8f8f8;
+    --surface: #ffffff;
+    --border: #e8e8e8;
+    --text: #1a1a1a;
+    --muted: #888;
+    --accent: #3b82f6;
+    --accent-light: #eff6ff;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(0,0,0,.07);
+    --shadow-hover: 0 8px 28px rgba(0,0,0,.12);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header {
+    max-width: 860px;
+    margin: 0 auto 2.5rem;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .site-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .site-title span { color: var(--accent); }
+
+  .site-sub {
+    margin-top: .4rem;
+    color: var(--muted);
+    font-size: .95rem;
+  }
+
+  .lang-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .switch {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    background: var(--border);
+    border-radius: 99px;
+    transition: background 0.3s;
+    flex-shrink: 0;
+  }
+
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+  #lang-checkbox:checked ~ .switch {
+    background: var(--accent);
+  }
+
+  #lang-checkbox:checked ~ .switch::after {
+    transform: translateX(24px);
+  }
+
+  #lang-checkbox { display: none; }
+
+  .lang-label {
+    font-weight: 500;
+    min-width: 60px;
+  }
+
+  .lang-label:first-child { text-align: right; }
+
+  .search-wrap {
+    margin-top: 1.4rem;
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  #search {
+    width: 100%;
+    max-width: 360px;
+    padding: .65rem 1rem .65rem 2.6rem;
+    border: 1.5px solid var(--border);
+    border-radius: 99px;
+    font-size: .95rem;
+    background: var(--surface);
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  #search:focus { border-color: var(--accent); }
+
+  .grid {
+    max-width: 860px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.3rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    box-shadow: var(--shadow);
+    transition: box-shadow .2s, transform .2s, border-color .2s;
+    cursor: pointer;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-3px);
+    border-color: var(--accent);
+  }
+
+  .card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--accent-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  .card-name {
+    font-weight: 650;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .card-desc {
+    font-size: .85rem;
+    color: var(--muted);
+    line-height: 1.45;
+    flex: 1;
+  }
+
+  .card-tag {
+    align-self: flex-start;
+    font-size: .75rem;
+    padding: .2rem .6rem;
+    border-radius: 99px;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .empty {
+    grid-column: 1/-1;
+    text-align: center;
+    color: var(--muted);
+    padding: 3rem 0;
+    font-size: .95rem;
+  }
+
+  footer {
+    max-width: 860px;
+    margin: 3rem auto 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: .8rem;
+  }
 </style>
 </head>
 <body>
 
-<div id="topbar">
-  <h1>⚡ IQI Analyser</h1>
-  <button class="btn" onclick="document.getElementById('fileInput').click()">📂 TIFF</button>
-  <input type="file" id="fileInput" accept=".tif,.tiff" style="display:none">
-  <label>W<input type="range" id="window" min="1" max="65535" value="65535"></label>
-  <label>L<input type="range" id="level" min="0" max="65535" value="32767"></label>
-  <div class="sep"></div>
-  <button class="btn active" id="btnLineMode" onclick="setMode('line')">📏 Ligne</button>
-  <button class="btn" id="btnValidate" onclick="openModal()" disabled>✅ Valider</button>
-  <button class="btn" id="btnClear" onclick="clearLine()" disabled>🗑 Effacer</button>
-  <div class="sep"></div>
-  <label id="sens-wrap" style="display:none">Sensibilité<input type="range" id="sensitivity" min="1" max="50" value="15" oninput="redetect()"></label>
-  <button class="btn" id="btnPeakMode"  onclick="setMode('peak')"  style="display:none">🖊 Pics</button>
-  <button class="btn" id="btnPairMode"  onclick="setMode('pair')"  style="display:none">🔗 Apparier</button>
-  <button class="btn" id="btnUnpair"    onclick="unpairSelected()" style="display:none" disabled>✂ Dissocier</button>
-  <button class="btn" id="btnRedetect"  onclick="redetect()"       style="display:none">🔄 Auto</button>
-  <button class="btn" id="btnBorneL"    onclick="startBorne('L')"  style="display:none">+Borne G</button>
-  <button class="btn" id="btnBorneR"    onclick="startBorne('R')"  style="display:none">+Borne D</button>
-  <button class="btn" id="btnZoomSel"   onclick="zoomToSel()"      style="display:none;background:#e94560">🔍 Zoom sél.</button>
-  <button class="btn" id="btnZoomReset" onclick="resetZoom()"       style="display:none">↺ Reset zoom</button>
-  <div class="sep" id="sep-srb" style="display:none"></div>
-  <button class="btn" id="btnCalcSrb"  onclick="calcSRb()"          style="display:none;background:#1a4a1a;border-color:#66bb6a">📊 Calculer SRb</button>
-  <span id="info">Aucun fichier</span>
-</div>
-
-<div id="toolinfo">
-  <span id="ti-icon"></span><span id="ti-text">Ouvrez un fichier TIFF pour commencer.</span>
-</div>
-
-<div id="main">
-  <div id="img-panel">
-    <div id="drop-zone"><div class="drop-icon">🖼️</div>Glissez un <b>.tiff</b> ici</div>
-    <canvas id="imgCanvas"></canvas>
-    <canvas id="lineCanvas"></canvas>
-  </div>
-  <div id="graph-panel" class="collapsed">
-    <div id="graph-header">
-      <div id="graph-toggle-btn" onclick="toggleGraph()">
-        <span id="graph-toggle">▲</span>
-        <span id="graph-title">📈 Profil de niveaux de gris</span>
-      </div>
-      <span class="gi" id="graph-info" style="margin-left:8px">—</span>
-      <span class="gi" id="zoom-lbl" style="display:none;color:#e94560;margin-left:auto"></span>
+<header>
+  <div class="header-top">
+    <div>
+      <div class="site-title" id="site-title">Utils <span>Apps</span></div>
+      <div class="site-sub" id="site-sub">Apps prompted and coded by kiczewski florent</div>
     </div>
-    <canvas id="graphCanvas"></canvas>
+    
+    <label class="lang-toggle" title="Changer de langue / Switch language">
+      <span class="lang-label" id="lang-label-fr">Français</span>
+      <input type="checkbox" id="lang-checkbox">
+      <div class="switch"></div>
+      <span class="lang-label" id="lang-label-en">English</span>
+    </label>
   </div>
-</div>
 
-<div id="legend-bar" style="background:#16213e;border-top:1px solid #0f3460;padding:3px 14px;display:flex;align-items:center;gap:14px;flex-shrink:0;flex-wrap:wrap;">
-  <span style="font-size:.67rem;color:#556;text-transform:uppercase;letter-spacing:.5px">Légende :</span>
-  <span class="leg"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="5" fill="#e94560"/></svg>Pic seul</span>
-  <span class="leg"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="5" fill="#29b6f6"/></svg>P1 paire</span>
-  <span class="leg"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="5" fill="#66bb6a"/></svg>P2 paire</span>
-  <span class="leg"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="5" fill="#ffb74d"/></svg>P3…</span>
-  <span class="leg"><svg width="11" height="11"><rect x="1" y="4" width="9" height="3" fill="#ff6b6b88"/></svg>Zone A (max entre T1–T2)</span>
-  <span class="leg"><svg width="11" height="11"><rect x="1" y="1" width="9" height="9" fill="#4fc3f730"/></svg>Zone B (fond)</span>
-</div>
-
-<!-- Résultats SRb -->
-<div id="srb-panel" style="display:none;background:#0a0a1a;border-top:2px solid #1a3a1a;flex-shrink:0;max-height:140px;overflow-y:auto;">
-  <div style="padding:5px 12px;background:#0d1f0d;border-bottom:1px solid #1a3a1a;display:flex;align-items:center;gap:10px;">
-    <span style="font-size:.76rem;color:#66bb6a;font-weight:600">📊 Résultats SRb</span>
-    <span id="srb-formula" style="font-size:.68rem;color:#556">SRb = (A − T̄) / (B̄ − T̄)</span>
-    <button class="btn" onclick="exportSRb()" style="margin-left:auto;background:#1a3a1a;border-color:#66bb6a;font-size:.68rem">📋 Export CSV</button>
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="search" type="text" placeholder="Rechercher une app…" autocomplete="off">
   </div>
-  <div id="srb-table" style="padding:4px 8px;"></div>
-</div>
+</header>
 
-<!-- IQI Diamètres -->
-<div id="iqi-panel" style="display:none;background:#0a0a1a;border-top:2px solid #1a1a3a;flex-shrink:0;max-height:180px;overflow-y:auto;">
-  <div style="padding:5px 12px;background:#0d0d2a;border-bottom:1px solid #1a1a3a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <span style="font-size:.76rem;color:#ab47bc;font-weight:600">📐 Diamètres IQI</span>
-    <button class="btn" onclick="loadIqiDuplex()" style="background:#1a1a3a;border-color:#ab47bc;font-size:.68rem">🔧 IQI DUPLEX</button>
-    <button class="btn" onclick="showIqiManuel()" style="background:#1a1a3a;border-color:#ab47bc;font-size:.68rem">✏️ Manuel</button>
-    <button class="btn" onclick="document.getElementById('iqiCsvInput').click()" style="background:#1a1a3a;border-color:#ab47bc;font-size:.68rem">📂 Charger CSV</button>
-    <input type="file" id="iqiCsvInput" accept=".csv,.txt" style="display:none">
-    <div class="sep"></div>
-    <button class="btn" id="btnTracerSrb" onclick="tracerSRb()" style="background:#1a3a1a;border-color:#66bb6a;font-size:.68rem">📈 Tracer SRb</button>
-    <span id="iqi-status" style="font-size:.66rem;color:#556;margin-left:auto"></span>
-  </div>
-  <div id="iqi-content" style="padding:4px 8px;"></div>
-</div>
+<div class="grid" id="grid"></div>
 
-<!-- Courbe SRb -->
-<div id="curve-panel" style="display:none;background:#0a0a1a;border-top:2px solid #1a3a1a;flex-shrink:0;">
-  <div style="padding:5px 12px;background:#0d1f0d;border-bottom:1px solid #1a3a1a;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-    <span style="font-size:.76rem;color:#66bb6a;font-weight:600">📈 Courbe SRb = f(diamètre)</span>
-    <span id="curve-eq" style="font-size:.64rem;color:#29b6f6;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-    <span id="curve-cutoff" style="font-size:.74rem;color:#e94560;font-weight:700"></span>
-    <button class="btn" id="btnExportCurve" onclick="exportCurve()" style="margin-left:auto;background:#1a3a1a;border-color:#66bb6a;font-size:.68rem">🖼️ Export image</button>
-    <button class="btn" id="btnExportHB" onclick="exportHautBas()" style="background:#1a3a1a;border-color:#66bb6a;font-size:.68rem">🖼️ Export Haut/Bas</button>
-    <button class="btn" id="btnExportResult" onclick="exportResult()" style="background:#1a3a1a;border-color:#66bb6a;font-size:.68rem">📋 Export résultat</button>
-  </div>
-  <canvas id="curveCanvas" style="width:100%;height:320px;display:block;cursor:crosshair"></canvas>
-</div>
-<div id="statusbar">Prêt</div>
-
-<div id="modal">
-  <div id="modal-box">
-    <h2>Largeur de la ligne de profil</h2>
-    <div class="modal-row">
-      <label>Largeur :</label>
-      <input type="number" id="widthInput" min="1" max="500" value="3">
-      <label>px</label>
-    </div>
-    <div id="modal-preview" style="font-size:.75rem;color:#aaa"></div>
-    <div class="modal-btns">
-      <button class="btn" onclick="closeModal()">Annuler</button>
-      <button class="btn" onclick="confirmLine()" style="background:#e94560">Confirmer →</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
+<footer id="footer">
+  Provided by kiczewski florent
+</footer>
 
 <script>
-// ══════════════════════════════════════════════════════
-// ÉTAT
-// ══════════════════════════════════════════════════════
-// Toast notification
-let toastTimer=null;
-function toast(msg,ms){
-  ms=ms||1200;
-  const el=document.getElementById('toast');
-  el.textContent=msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.classList.remove('show'),ms);
-}
-
-const S = {
-  raw16:null, width:0, height:0, min16:0, max16:65535, filename:'',
-  line:null, lineWidth:3, drawing:false, p1:null,
-  profile:null, profileLen:0,
-  peaks:[],   // [{idx, pairId, prom}]
-  pairs:[],   // [{id, li, ri}]
-  mode:'line',
-  dragPeak:null,
-  pairSelect:[],
-  hoverPeak:null,
-  selectedPair:null,
-  srb:[],
-  diameters:[]  // [{pair, diam}] mapping paire -> diamètre mm
-};
-
-// Zoom
-const Z = {scale:1, offset:0};
-// Bornes de sélection
-const B = {L:null, R:null, pending:null, dragging:null};
-
-const PAD = {top:18, right:22, bottom:36, left:68};
-const PAIR_COLS = ['#29b6f6','#66bb6a','#ffb74d','#ab47bc','#ff8a65','#80cbc4'];
-const HIT = 10;
-let graphCollapsed = true;
-
-// ══════════════════════════════════════════════════════
-// REFS
-// ══════════════════════════════════════════════════════
-const imgCanvas  = document.getElementById('imgCanvas');
-const lineCanvas = document.getElementById('lineCanvas');
-const graphCanvas= document.getElementById('graphCanvas');
-const ictx = imgCanvas.getContext('2d');
-const lctx = lineCanvas.getContext('2d');
-const gctx = graphCanvas.getContext('2d');
-const dropZone = document.getElementById('drop-zone');
-const infoEl   = document.getElementById('info');
-const statusEl = document.getElementById('statusbar');
-const wSlider  = document.getElementById('window');
-const lSlider  = document.getElementById('level');
-const btnValidate = document.getElementById('btnValidate');
-const btnClear    = document.getElementById('btnClear');
-
-// ══════════════════════════════════════════════════════
-// OUTIL INFO
-// ══════════════════════════════════════════════════════
-const TI = {
-  line: {i:'📏', t:'Cliquez-glissez sur l\'image pour tracer la ligne. Relâchez puis ✅ Valider pour choisir l\'épaisseur et extraire le profil.'},
-  peak: {i:'🖊', t:'Clic sur courbe: ajouter un pic. Clic-droit sur un pic: supprimer. Glisser un pic: déplacer. Molette sur graphe: zoomer.'},
-  pair: {i:'🔗', t:'Cliquez 2 pics successivement pour former une paire T1/T2. Cliquez une zone de paire pour la sélectionner, puis ✂ Dissocier.'},
-};
-function setToolInfo(k){
-  const t=TI[k]||{i:'',t:''};
-  document.getElementById('ti-icon').textContent=t.i;
-  document.getElementById('ti-text').textContent=t.t;
-}
-setToolInfo('line');
-
-// ══════════════════════════════════════════════════════
-// VISIBILITÉ BOUTONS GRAPHE
-// ══════════════════════════════════════════════════════
-function setGraphBtns(v){
-  ['sens-wrap','btnPeakMode','btnPairMode','btnUnpair','btnRedetect',
-   'btnBorneL','btnBorneR','btnZoomReset','sep-srb','btnCalcSrb'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.style.display=v?'':'none';
-  });
-  if(!v){ B.L=null; B.R=null; B.pending=null; updateZoomSelBtn(); }
-}
-function updateZoomSelBtn(){
-  document.getElementById('btnZoomSel').style.display=(B.L!==null&&B.R!==null)?'':'none';
-}
-
-// ══════════════════════════════════════════════════════
-// MODE OUTIL
-// ══════════════════════════════════════════════════════
-function setMode(m){
-  S.mode=m; S.pairSelect=[];
-  ['btnLineMode','btnPeakMode','btnPairMode'].forEach(id=>{
-    document.getElementById(id).classList.toggle('active', id===`btn${m.charAt(0).toUpperCase()+m.slice(1)}Mode`);
-  });
-  setToolInfo(m);
-  if(S.profile) requestAnimationFrame(drawGraph);
-}
-
-// ══════════════════════════════════════════════════════
-// FICHIER
-// ══════════════════════════════════════════════════════
-const imgPanel = document.getElementById('img-panel');
-imgPanel.addEventListener('dragover', e=>{e.preventDefault();imgPanel.style.outline='2px dashed #e94560';});
-imgPanel.addEventListener('dragleave',()=>{imgPanel.style.outline='';});
-imgPanel.addEventListener('drop',e=>{e.preventDefault();imgPanel.style.outline='';if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
-document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
-wSlider.addEventListener('input',renderImage);
-lSlider.addEventListener('input',renderImage);
-
-// ══════════════════════════════════════════════════════
-// TRACÉ LIGNE (imgCanvas)
-// ══════════════════════════════════════════════════════
-imgCanvas.addEventListener('mousedown',e=>{
-  if(!S.raw16||S.mode!=='line')return;
-  S.p1=cpt(e); S.drawing=true; S.line=null;
-  btnValidate.disabled=true; btnClear.disabled=true;
-  drawOverlay(S.p1,S.p1);
-});
-imgCanvas.addEventListener('mousemove',e=>{
-  if(!S.drawing)return;
-  const p=cpt(e); drawOverlay(S.p1,p);
-  statusEl.textContent=`(${S.p1.x},${S.p1.y})→(${p.x},${p.y}) ${Math.round(d2(S.p1,p))}px`;
-});
-imgCanvas.addEventListener('mouseup',e=>{
-  if(!S.drawing)return;
-  S.drawing=false;
-  const p=cpt(e);
-  S.line={x1:S.p1.x,y1:S.p1.y,x2:p.x,y2:p.y}; S.p1=null;
-  drawOverlay(S.line,null);
-  const len=Math.round(d2({x:S.line.x1,y:S.line.y1},{x:S.line.x2,y:S.line.y2}));
-  statusEl.textContent=`Ligne ${len}px — Validez ou retracez`;
-  btnValidate.disabled=len<2; btnClear.disabled=false;
-});
-imgCanvas.addEventListener('mouseleave',e=>{if(S.drawing&&S.p1)drawOverlay(S.p1,cpt(e));});
-
-function cpt(e){
-  const r=imgCanvas.getBoundingClientRect();
-  return{x:Math.round((e.clientX-r.left)/(r.width/S.width)), y:Math.round((e.clientY-r.top)/(r.height/S.height))};
-}
-function d2(a,b){return Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2);}
-
-function drawOverlay(a,b){
-  let x1,y1,x2,y2;
-  if('x1'in a){x1=a.x1;y1=a.y1;x2=a.x2;y2=a.y2;}else{x1=a.x;y1=a.y;x2=b.x;y2=b.y;}
-  lctx.clearRect(0,0,lineCanvas.width,lineCanvas.height);
-  const w=S.lineWidth;
-  if(w>1){
-    const dx=x2-x1,dy=y2-y1,l=Math.sqrt(dx*dx+dy*dy)||1,nx=-dy/l*w/2,ny=dx/l*w/2;
-    lctx.beginPath();lctx.moveTo(x1+nx,y1+ny);lctx.lineTo(x2+nx,y2+ny);
-    lctx.lineTo(x2-nx,y2-ny);lctx.lineTo(x1-nx,y1-ny);lctx.closePath();
-    lctx.fillStyle='rgba(233,69,96,0.18)';lctx.fill();
-  }
-  lctx.beginPath();lctx.moveTo(x1,y1);lctx.lineTo(x2,y2);
-  lctx.strokeStyle='#e94560';lctx.lineWidth=1.5;lctx.setLineDash([6,3]);lctx.stroke();lctx.setLineDash([]);
-  for(const[px,py]of[[x1,y1],[x2,y2]]){
-    lctx.beginPath();lctx.arc(px,py,4,0,Math.PI*2);
-    lctx.fillStyle='#e94560';lctx.fill();lctx.strokeStyle='#fff';lctx.lineWidth=1;lctx.stroke();
-  }
-}
-function clearLine(){
-  S.line=null;S.p1=null;S.drawing=false;
-  lctx.clearRect(0,0,lineCanvas.width,lineCanvas.height);
-  btnValidate.disabled=true;btnClear.disabled=true;
-  statusEl.textContent='Ligne effacée';
-}
-
-// ══════════════════════════════════════════════════════
-// MODAL
-// ══════════════════════════════════════════════════════
-function openModal(){document.getElementById('modal').classList.add('show');updateMP();}
-function closeModal(){document.getElementById('modal').classList.remove('show');}
-document.getElementById('widthInput').addEventListener('input',()=>{
-  S.lineWidth=Math.max(1,parseInt(document.getElementById('widthInput').value)||1);
-  if(S.line)drawOverlay(S.line,null); updateMP();
-});
-function updateMP(){
-  const w=parseInt(document.getElementById('widthInput').value)||1;
-  const l=S.line; if(!l)return;
-  const len=Math.round(Math.sqrt((l.x2-l.x1)**2+(l.y2-l.y1)**2));
-  document.getElementById('modal-preview').textContent=`Ligne ${len}px × ${w}px → ${len} points de profil`;
-}
-function confirmLine(){
-  S.lineWidth=Math.max(1,parseInt(document.getElementById('widthInput').value)||1);
-  closeModal(); if(S.line)drawOverlay(S.line,null); extractProfile();
-}
-
-// ══════════════════════════════════════════════════════
-// EXTRACTION PROFIL
-// ══════════════════════════════════════════════════════
-function extractProfile(){
-  const{raw16,width,height,line,lineWidth}=S; if(!raw16||!line)return;
-  const{x1,y1,x2,y2}=line, dx=x2-x1, dy=y2-y1;
-  const lineLen=Math.sqrt(dx*dx+dy*dy), N=Math.round(lineLen);
-  if(N<2)return;
-  const ux=dx/lineLen, uy=dy/lineLen, px=-uy, py=ux, half=(lineWidth-1)/2;
-  const prof=new Float64Array(N);
-  for(let i=0;i<N;i++){
-    const t=i/(N-1), cx=x1+t*dx, cy=y1+t*dy;
-    let sum=0, cnt=0;
-    for(let j=-half;j<=half;j+=1){
-      const sx=Math.round(cx+j*px), sy=Math.round(cy+j*py);
-      if(sx>=0&&sx<width&&sy>=0&&sy<height){sum+=raw16[sy*width+sx];cnt++;}
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ═══ CONFIGURATION FACILE ═════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  const i18n = {
+    fr: {
+      siteTitle: "My <span>Apps</span>",
+      siteSub: "Toutes mes applications en un seul endroit.",
+      searchPlaceholder: "Rechercher une app…",
+      emptyMessage: "Aucune application trouvée.",
+      footer: "Modifiez le tableau <code>apps</code> dans le fichier pour ajouter vos applications."
+    },
+    en: {
+      siteTitle: "My <span>Apps</span>",
+      siteSub: "All my applications in one place.",
+      searchPlaceholder: "Search for an app…",
+      emptyMessage: "No application found.",
+      footer: "Edit the <code>apps</code> array in the file to add your applications."
     }
-    prof[i]=cnt?sum/cnt:0;
-  }
-  S.profile=prof; S.profileLen=N;
-  S.peaks=[]; S.pairs=[]; S.pairSelect=[]; S.selectedPair=null; S.srb=[]; S.diameters=[];
-  Z.scale=1; Z.offset=0; B.L=null; B.R=null; B.pending=null;
-  detectPeaks();
-  document.getElementById('srb-panel').style.display='none';
-  document.getElementById('iqi-panel').style.display='none';
-  document.getElementById('curve-panel').style.display='none';
-  curveData=null;
-  document.getElementById('graph-info').textContent=`${N}pts | larg.${lineWidth}px`;
-  showGraph();
-  statusEl.textContent=`✅ ${N}pts — ${S.peaks.length} pic(s), ${S.pairs.length} paire(s)`;
-}
-
-// ══════════════════════════════════════════════════════
-// DÉTECTION AUTOMATIQUE
-// ══════════════════════════════════════════════════════
-function smooth(arr,r){
-  const out=new Float64Array(arr.length);
-  for(let i=0;i<arr.length;i++){
-    let s=0,c=0;
-    for(let j=Math.max(0,i-r);j<=Math.min(arr.length-1,i+r);j++){s+=arr[j];c++;}
-    out[i]=s/c;
-  }
-  return out;
-}
-
-function peakWidth(prof,idx){
-  const N=prof.length, val=prof[idx];
-  let lm=val, rm=val;
-  for(let j=idx-1;j>=0;j--){if(prof[j]>lm)lm=prof[j];if(prof[j]<val)break;}
-  for(let j=idx+1;j<N;j++){if(prof[j]>rm)rm=prof[j];if(prof[j]<val)break;}
-  const prom=Math.min(lm,rm)-val; if(prom<=0)return 1;
-  const thr=val+prom*0.5;
-  let lc=idx; for(let j=idx-1;j>=0;j--){if(prof[j]>=thr){lc=j;break;}}
-  let rc=idx; for(let j=idx+1;j<N;j++){if(prof[j]>=thr){rc=j;break;}}
-  return Math.max(1,rc-lc);
-}
-
-function redetect(){
-  S.peaks=[]; S.pairs=[]; S.pairSelect=[]; S.selectedPair=null; S.srb=[]; S.diameters=[];
-  detectPeaks(); updateUnpairBtn();
-  document.getElementById('srb-panel').style.display='none';
-  document.getElementById('iqi-panel').style.display='none';
-  document.getElementById('curve-panel').style.display='none';
-  curveData=null;
-  requestAnimationFrame(drawGraph);
-  statusEl.textContent=`🔄 ${S.peaks.length} pic(s), ${S.pairs.length} paire(s)`;
-}
-
-function detectPeaks(){
-  const prof=S.profile, N=prof.length;
-  const sens=parseInt(document.getElementById('sensitivity').value)||15;
-  const minDist=Math.max(2,Math.round(N*0.004));
-
-  // Résultats cumulés
-  let allPeaks=[];
-  let allPairs=[];
-  let pairIdCounter=0;
-
-  const MAX_PASSES=6;
-  let searchFrom=0;  // début de la zone à analyser pour cette passe
-
-  for(let pass=0;pass<MAX_PASSES;pass++){
-    // Lissage de plus en plus faible à chaque passe
-    const smR=Math.max(1, Math.round(N/(750*Math.pow(1.8,pass))));
-    const sm=smooth(prof, smR);
-
-    // Stats dynamiques sur la zone searchFrom..N
-    let pMin=Infinity, pMax=-Infinity;
-    for(let i=searchFrom;i<N;i++){if(sm[i]<pMin)pMin=sm[i];if(sm[i]>pMax)pMax=sm[i];}
-    const dyn=pMax-pMin||1;
-    const promThresh=dyn*(0.003+(50-sens)/50*0.047);
-
-    // Chercher des minima locaux dans [searchFrom, N)
-    const cands=[];
-    for(let i=Math.max(1,searchFrom);i<N-1;i++){
-      if(sm[i]<=sm[i-1]&&sm[i]<=sm[i+1]){
-        let lm=sm[i], rm=sm[i];
-        for(let j=i-1;j>=searchFrom;j--){if(sm[j]>lm)lm=sm[j];if(sm[j]<sm[i])break;}
-        for(let j=i+1;j<N;j++){if(sm[j]>rm)rm=sm[j];if(sm[j]<sm[i])break;}
-        const prom=Math.min(lm,rm)-sm[i];
-        if(prom>=promThresh) cands.push({idx:i,prom});
-      }
-    }
-
-    // Garder les plus proéminents, espacés de minDist, non déjà trouvés
-    const sorted=[...cands].sort((a,b)=>b.prom-a.prom);
-    const newPeaks=[];
-    for(const c of sorted){
-      let best=c.idx;
-      for(let k=Math.max(0,c.idx-3);k<=Math.min(N-1,c.idx+3);k++)
-        if(prof[k]<prof[best])best=k;
-      // Ne pas dupliquer un pic déjà dans allPeaks
-      const tooClose=allPeaks.some(p=>Math.abs(p.idx-best)<minDist)
-                  || newPeaks.some(p=>Math.abs(p.idx-best)<minDist);
-      if(!tooClose) newPeaks.push({idx:best,prom:c.prom,pairId:null});
-    }
-    newPeaks.sort((a,b)=>a.idx-b.idx);
-
-    // Fusionner avec allPeaks et réindexer
-    const combined=[...allPeaks, ...newPeaks].sort((a,b)=>a.idx-b.idx);
-
-    // Ré-apparier tous les pics combinés (on recalcule les paires depuis le début
-    // pour que les nouveaux pics puissent s'apparier avec leurs voisins existants)
-    combined.forEach(p=>p.pairId=null);
-    const newPairs=[];
-    const used=new Set();
-    let pid=0;
-    for(let i=0;i<combined.length;i++){
-      if(used.has(i))continue;
-      const w=peakWidth(prof,combined[i].idx);
-      const searchEnd=combined[i].idx+w*4;
-      for(let j=i+1;j<combined.length;j++){
-        if(used.has(j))continue;
-        if(combined[j].idx>searchEnd)break;
-        const a=combined[i].idx, b=combined[j].idx;
-        let mx=prof[a];for(let k=a;k<=b;k++)if(prof[k]>mx)mx=prof[k];
-        const bump=mx-Math.min(prof[a],prof[b]);
-        if(bump>dyn*0.002){
-          combined[i].pairId=pid; combined[j].pairId=pid;
-          newPairs.push({id:pid,li:i,ri:j});
-          used.add(i); used.add(j); pid++; break;
-        }
-      }
-    }
-
-    const newPairCount=newPairs.length;
-    allPeaks=combined;
-    allPairs=newPairs;
-    pairIdCounter=pid;
-
-    // Trouver le dernier pic apparié pour savoir jusqu'où on est "sûr"
-    const pairedIdxs=allPeaks.filter(p=>p.pairId!==null).map(p=>p.idx);
-    const lastPairedIdx=pairedIdxs.length?Math.max(...pairedIdxs):-1;
-
-    // Chercher si des pics seuls existent après le dernier apparié
-    const singleAfter=allPeaks.filter(p=>p.pairId===null&&p.idx>lastPairedIdx);
-
-    if(singleAfter.length===0&&pass>0) break; // Plus rien à trouver
-    if(lastPairedIdx<0&&pass>0) break;        // Aucune paire du tout, inutile de continuer
-
-    // Prochain passage : on repart juste après le dernier pic apparié
-    // (ou depuis le début si première passe)
-    const nextFrom=lastPairedIdx>=0?lastPairedIdx:0;
-    if(nextFrom===searchFrom&&pass>0) break; // Pas de progression
-    searchFrom=nextFrom;
-
-    if(allPairs.length>=15) break; // Max IQI atteint
-  }
-
-  S.peaks=allPeaks;
-  S.pairs=allPairs;
-}
-
-// ══════════════════════════════════════════════════════
-// APPARIEMENT MANUEL
-// ══════════════════════════════════════════════════════
-function unpairSelected(){
-  if(S.selectedPair===null)return;
-  const pair=S.pairs[S.selectedPair];
-  S.peaks[pair.li].pairId=null; S.peaks[pair.ri].pairId=null;
-  S.pairs.splice(S.selectedPair,1);
-  S.pairs.forEach((p,i)=>{p.id=i;S.peaks[p.li].pairId=i;S.peaks[p.ri].pairId=i;});
-  S.selectedPair=null; updateUnpairBtn(); requestAnimationFrame(drawGraph);
-}
-function updateUnpairBtn(){document.getElementById('btnUnpair').disabled=S.selectedPair===null;}
-
-function manualPair(){
-  const[ia,ib]=[...S.pairSelect].sort((a,b)=>a-b);
-  if(S.peaks[ia].pairId!==null||S.peaks[ib].pairId!==null){
-    statusEl.textContent='⚠ Un des pics est déjà dans une paire'; S.pairSelect=[]; return;
-  }
-  const id=S.pairs.length;
-  S.peaks[ia].pairId=id; S.peaks[ib].pairId=id;
-  S.pairs.push({id,li:ia,ri:ib}); S.pairSelect=[];
-  statusEl.textContent=`✅ Paire P${id+1} créée`; updateUnpairBtn(); requestAnimationFrame(drawGraph);
-}
-
-function removePeak(pi){
-  const pk=S.peaks[pi];
-  if(pk.pairId!==null){
-    const pIdx=S.pairs.findIndex(p=>p.id===pk.pairId);
-    if(pIdx>=0){S.peaks[S.pairs[pIdx].li].pairId=null;S.peaks[S.pairs[pIdx].ri].pairId=null;S.pairs.splice(pIdx,1);}
-  }
-  S.peaks.splice(pi,1);
-  S.pairs.forEach((p,i)=>{p.id=i;S.peaks[p.li].pairId=i;S.peaks[p.ri].pairId=i;});
-  if(S.selectedPair!==null&&S.selectedPair>=S.pairs.length)S.selectedPair=null;
-  updateUnpairBtn();
-}
-
-// ══════════════════════════════════════════════════════
-// CALCUL SRb
-// ══════════════════════════════════════════════════════
-
-function profileMean(i0, i1){
-  // Moyenne du profil brut entre les indices i0 et i1 inclus (clampés)
-  const N=S.profileLen;
-  i0=Math.max(0,i0); i1=Math.min(N-1,i1);
-  if(i1<i0) return 0;
-  let s=0; for(let i=i0;i<=i1;i++) s+=S.profile[i];
-  return s/(i1-i0+1);
-}
-
-function calcSRb(){
-  if(!S.profile||!S.pairs.length){
-    statusEl.textContent='⚠ Pas de paires définies'; return;
-  }
-  S.srb=[];
-
-  S.pairs.forEach((pair,pi)=>{
-    const pkL=S.peaks[pair.li], pkR=S.peaks[pair.ri];
-    const iT1=pkL.idx, iT2=pkR.idx;
-    const T1=S.profile[iT1], T2=S.profile[iT2];
-    const Tmoyen=(T1+T2)/2;
-
-    // Zone A : maximum entre T1 et T2 (courbe inversée, donc max = "fond remontant" entre les deux pics)
-    let Aval=S.profile[iT1], Aidx=iT1;
-    for(let i=iT1;i<=iT2;i++){ if(S.profile[i]>Aval){Aval=S.profile[i];Aidx=i;} }
-
-    // Largeur des pics pour dimensionner les zones B
-    const wL=peakWidth(S.profile,iT1);
-    const wR=peakWidth(S.profile,iT2);
-
-    // B1 : fenêtre de largeur 2×wL juste à gauche de T1  [iT1-3*wL , iT1-wL]
-    const B1i0=iT1-3*wL, B1i1=iT1-wL;
-    const B1=profileMean(B1i0, B1i1);
-
-    // B2 : fenêtre de largeur 2×wR juste à droite de T2  [iT2+wR , iT2+3*wR]
-    const B2i0=iT2+wR, B2i1=iT2+3*wR;
-    const B2=profileMean(B2i0, B2i1);
-
-    const Bmoyen=(B1+B2)/2;
-    const SRb=(Aval-Tmoyen)/(Bmoyen-Tmoyen);
-
-    S.srb.push({pi, iT1,iT2, T1,T2,Tmoyen, Aidx,Aval, B1i0,B1i1,B1, B2i0,B2i1,B2, Bmoyen, SRb,
-      col:PAIR_COLS[pi%PAIR_COLS.length]});
-  });
-
-  renderSrbTable();
-  showIqiPanel();
-  requestAnimationFrame(drawGraph);
-  statusEl.textContent=`✅ SRb calculé pour ${S.srb.length} paire(s)`;
-}
-
-function renderSrbTable(){
-  const panel=document.getElementById('srb-panel');
-  const tbl=document.getElementById('srb-table');
-  if(!S.srb.length){panel.style.display='none';return;}
-  panel.style.display='';
-
-  const cols=['Paire','T1','T2','TÌ"','A','B1','B2','BÌ"','SRb'];
-  let h=`<table style="border-collapse:collapse;font-size:.72rem;width:100%">
-    <thead><tr>${cols.map(c=>`<th style="padding:2px 8px;color:#aaa;border-bottom:1px solid #1a3a1a;text-align:center;white-space:nowrap">${c}</th>`).join('')}</tr></thead><tbody>`;
-
-  S.srb.forEach(r=>{
-    const fmt=v=>Math.round(v).toLocaleString();
-    const fmtF=v=>isFinite(v)?v.toFixed(4):'—';
-    h+=`<tr>
-      <td style="padding:2px 8px;text-align:center;color:${r.col};font-weight:600">P${r.pi+1}</td>
-      <td style="padding:2px 8px;text-align:center">${fmt(r.T1)}</td>
-      <td style="padding:2px 8px;text-align:center">${fmt(r.T2)}</td>
-      <td style="padding:2px 8px;text-align:center;color:#e0c080">${fmt(r.Tmoyen)}</td>
-      <td style="padding:2px 8px;text-align:center;color:#ff8a80">${fmt(r.Aval)}</td>
-      <td style="padding:2px 8px;text-align:center;color:#80d8ff">${fmt(r.B1)}</td>
-      <td style="padding:2px 8px;text-align:center;color:#80d8ff">${fmt(r.B2)}</td>
-      <td style="padding:2px 8px;text-align:center;color:#80d8ff">${fmt(r.Bmoyen)}</td>
-      <td style="padding:2px 8px;text-align:center;color:#66bb6a;font-weight:700">${fmtF(r.SRb)}</td>
-    </tr>`;
-  });
-  h+='</tbody></table>';
-  tbl.innerHTML=h;
-}
-function exportSRb(){
-  if(!S.srb.length){statusEl.textContent='Rien à exporter';return;}
-  const sep=';';
-  const hdr=['Paire','T1','T2','T_moy','A','B1','B2','B_moy','SRb'].join(sep);
-  const rows=S.srb.map(r=>[
-    'P'+(r.pi+1),
-    Math.round(r.T1),Math.round(r.T2),Math.round(r.Tmoyen),
-    Math.round(r.Aval),Math.round(r.B1),Math.round(r.B2),Math.round(r.Bmoyen),
-    isFinite(r.SRb)?r.SRb.toFixed(4):'N/A'
-  ].join(sep));
-  const csv='\uFEFF'+[hdr,...rows].join('\r\n');
-  try{
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=(S.filename||'SRb')+'_SRB.csv';a.click();
-    URL.revokeObjectURL(url);
-    statusEl.textContent='\u2705 CSV téléchargé';
-  }catch(e){
-    navigator.clipboard.writeText(csv).then(
-      ()=>{statusEl.textContent='\uD83D\uDCCB CSV copié dans le presse-papier';},
-      ()=>{statusEl.textContent='\u274C Export échoué';}
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// IQI DIAMÈTRES
-// ═══════════════════════════════════════════════════════
-const DUPLEX_DIAM=[0.800,0.630,0.500,0.400,0.320,0.250,0.200,0.160,0.130,0.100,0.080,0.063,0.050,0.040,0.032];
-
-function showIqiPanel(){
-  document.getElementById('iqi-panel').style.display='';
-}
-
-function loadIqiDuplex(){
-  if(!S.srb.length){statusEl.textContent='Calculez SRb d\'abord';return;}
-  const n=S.pairs.length;
-  S.diameters=[];
-  for(let i=0;i<n;i++){
-    S.diameters.push({pair:i, diam:i<DUPLEX_DIAM.length?DUPLEX_DIAM[i]:null});
-  }
-  renderIqiTable(false);
-  document.getElementById('iqi-status').textContent='IQI DUPLEX chargé ('+Math.min(n,DUPLEX_DIAM.length)+'/'+n+' paires)';
-  statusEl.textContent='IQI DUPLEX : '+DUPLEX_DIAM.slice(0,n).join(', ')+' mm';
-}
-
-function showIqiManuel(){
-  if(!S.srb.length){statusEl.textContent='Calculez SRb d\'abord';return;}
-  const n=S.pairs.length;
-  S.diameters=[];
-  for(let i=0;i<n;i++) S.diameters.push({pair:i, diam:null});
-  renderIqiTable(true);
-  document.getElementById('iqi-status').textContent='Saisie manuelle — remplissez les diamètres';
-}
-
-document.getElementById('iqiCsvInput').addEventListener('change',function(e){
-  const f=e.target.files[0]; if(!f)return;
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    try{ parseIqiCsv(ev.target.result); }
-    catch(err){ statusEl.textContent='Erreur CSV : '+err.message; }
   };
-  reader.readAsText(f);
-  e.target.value='';
-});
 
-function parseIqiCsv(text){
-  if(!S.srb.length){statusEl.textContent='Calculez SRb d\'abord';return;}
-  const lines=text.trim().split(/\r?\n/).filter(l=>l.trim());
-  const n=S.pairs.length;
-  S.diameters=[];
-  // Detect separator
-  const sep=lines[0].includes(';')?';':lines[0].includes('\t')?'\t':',';
-  let dataStart=0;
-  // Skip header if first cell is not a number
-  const firstCell=lines[0].split(sep)[0].trim();
-  if(isNaN(parseFloat(firstCell))) dataStart=1;
-  for(let i=dataStart;i<lines.length;i++){
-    const cols=lines[i].split(sep).map(c=>c.trim());
-    if(cols.length>=2){
-      const pair=parseInt(cols[0])-1; // 1-indexed in CSV
-      const diam=parseFloat(cols[1].replace(',','.'));
-      if(!isNaN(pair)&&pair>=0&&pair<n&&!isNaN(diam)){
-        S.diameters[pair]={pair, diam};
-      }
-    } else if(cols.length===1){
-      // Single column = just diameters in order
-      const diam=parseFloat(cols[0].replace(',','.'));
-      const idx=i-dataStart;
-      if(!isNaN(diam)&&idx<n) S.diameters[idx]={pair:idx, diam};
+  // Vos applications - structure de dossiers : app1/fr/ et app1/en/
+  const apps = [
+    {
+      folder: "app1",        // Dossier racine de l'app
+      icon: "🚀",
+      // Français
+      name: "Analyser d'IQI",
+      desc: "Permet le calcul de SRB pour une IQI, fait par défaut pour radiographie X.",
+      tag: "Outil",
+      // Anglais
+      name_en: "IQI analyzer",
+      desc_en: "Allow calculation of SRB for an IQI, made originally for X radiography.",
+      tag_en: "Tool"
+    },
+    {
+      folder: "app2",
+      icon: "🎨",
+      name: "App 2",
+      desc: "Une application créative avec des fonctionnalités visuelles.",
+      tag: "Design",
+      name_en: "App 2",
+      desc_en: "A creative application with visual features.",
+      tag_en: "Design"
+    },
+    {
+      folder: "app3",
+      icon: "📊",
+      name: "App 3",
+      desc: "Tableau de bord de données et visualisations.",
+      tag: "Data",
+      name_en: "App 3",
+      desc_en: "Data dashboard and visualizations.",
+      tag_en: "Data"
+    },
+    {
+      folder: "app4",
+      icon: "⚙️",
+      name: "App 4",
+      desc: "Utilitaire de configuration et de gestion.",
+      tag: "Utilitaire",
+      name_en: "App 4",
+      desc_en: "Configuration and management utility.",
+      tag_en: "Utility"
+    },
+    {
+      folder: "app5",
+      icon: "🎮",
+      name: "App 5",
+      desc: "Jeu ou application interactive pour le fun.",
+      tag: "Fun",
+      name_en: "App 5",
+      desc_en: "Game or interactive application for fun.",
+      tag_en: "Fun"
+    },
+  ];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ═══ LOGIQUE (ne pas modifier) ═════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const grid = document.getElementById('grid');
+  const search = document.getElementById('search');
+  const langCheckbox = document.getElementById('lang-checkbox');
+  
+  let currentLang = localStorage.getItem('apphub-lang') || 'fr';
+  
+  if (currentLang === 'en') {
+    langCheckbox.checked = true;
+  }
+
+  function getText(app, field) {
+    if (currentLang === 'en' && app[field + '_en']) {
+      return app[field + '_en'];
     }
+    return app[field];
   }
-  // Fill missing
-  for(let i=0;i<n;i++){
-    if(!S.diameters[i]) S.diameters[i]={pair:i, diam:null};
-  }
-  renderIqiTable(false);
-  const filled=S.diameters.filter(d=>d.diam!==null).length;
-  document.getElementById('iqi-status').textContent='CSV chargé ('+filled+'/'+n+' paires)';
-  statusEl.textContent='CSV IQI chargé : '+filled+' diamètres';
-}
 
-function renderIqiTable(editable){
-  const el=document.getElementById('iqi-content');
-  const n=S.diameters.length;
-  if(!n){el.innerHTML='';return;}
-  let h='<table style="border-collapse:collapse;font-size:.72rem;width:100%"><thead><tr>';
-  h+='<th style="padding:2px 6px;color:#aaa;border-bottom:1px solid #1a1a3a;text-align:center">Paire</th>';
-  h+='<th style="padding:2px 6px;color:#aaa;border-bottom:1px solid #1a1a3a;text-align:center">Diamètre (mm)</th>';
-  h+='<th style="padding:2px 6px;color:#aaa;border-bottom:1px solid #1a1a3a;text-align:center">SRb</th>';
-  h+='</tr></thead><tbody>';
-  S.diameters.forEach((d,i)=>{
-    const col=PAIR_COLS[i%PAIR_COLS.length];
-    const srb=S.srb[i]?S.srb[i].SRb:null;
-    const srbTxt=srb!==null&&isFinite(srb)?srb.toFixed(4):'—';
-    h+='<tr>';
-    h+='<td style="padding:2px 6px;text-align:center;color:'+col+';font-weight:600">P'+(i+1)+'</td>';
-    if(editable){
-      h+='<td style="padding:2px 6px;text-align:center"><input type="number" step="0.001" min="0" '
-        +'value="'+(d.diam!==null?d.diam:'')+'" '
-        +'onchange="updateDiam('+i+',this.value)" '
-        +'style="background:#0f1a30;border:1px solid #333;color:#e0e0e0;width:70px;text-align:center;font-size:.72rem;border-radius:3px;padding:1px 4px"></td>';
-    } else {
-      h+='<td style="padding:2px 6px;text-align:center;color:#ce93d8">'+(d.diam!==null?d.diam.toFixed(3):'—')+'</td>';
+  function updateUI() {
+    document.getElementById('site-title').innerHTML = i18n[currentLang].siteTitle;
+    document.getElementById('site-sub').textContent = i18n[currentLang].siteSub;
+    document.getElementById('search').placeholder = i18n[currentLang].searchPlaceholder;
+    document.getElementById('footer').innerHTML = i18n[currentLang].footer;
+    
+    // Met à jour le style des labels de langue
+    document.getElementById('lang-label-fr').style.opacity = currentLang === 'fr' ? '1' : '0.5';
+    document.getElementById('lang-label-en').style.opacity = currentLang === 'en' ? '1' : '0.5';
+    
+    render(search.value);
+  }
+
+  function render(filter = '') {
+    grid.innerHTML = '';
+    const q = filter.trim().toLowerCase();
+    
+    const filtered = q
+      ? apps.filter(a => {
+          const name = getText(a, 'name').toLowerCase();
+          const desc = getText(a, 'desc').toLowerCase();
+          const tag = getText(a, 'tag').toLowerCase();
+          return name.includes(q) || desc.includes(q) || tag.includes(q);
+        })
+      : apps;
+
+    if (!filtered.length) {
+      grid.innerHTML = `<p class="empty">${i18n[currentLang].emptyMessage}</p>`;
+      return;
     }
-    h+='<td style="padding:2px 6px;text-align:center;color:#66bb6a">'+srbTxt+'</td>';
-    h+='</tr>';
-  });
-  h+='</tbody></table>';
-  el.innerHTML=h;
-  showIqiPanel();
-}
 
-function updateDiam(idx,val){
-  const v=parseFloat(val.replace(',','.'));
-  S.diameters[idx].diam=isNaN(v)?null:v;
-  const filled=S.diameters.filter(d=>d.diam!==null).length;
-  document.getElementById('iqi-status').textContent=filled+'/'+S.diameters.length+' renseignés';
-}
-
-// ═══════════════════════════════════════════════════════
-// RÉGRESSION POLYNOMIALE & COURBE SRb
-// ═══════════════════════════════════════════════════════
-
-// Résolution système linéaire par élimination de Gauss
-function gaussSolve(A,b){
-  const n=A.length;
-  const M=A.map((r,i)=>[...r,b[i]]);
-  for(let c=0;c<n;c++){
-    let mx=Math.abs(M[c][c]),mr=c;
-    for(let r=c+1;r<n;r++){if(Math.abs(M[r][c])>mx){mx=Math.abs(M[r][c]);mr=r;}}
-    if(mr!==c)[M[c],M[mr]]=[M[mr],M[c]];
-    if(Math.abs(M[c][c])<1e-14)return null;
-    for(let r=c+1;r<n;r++){
-      const f=M[r][c]/M[c][c];
-      for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];
-    }
-  }
-  const x=new Array(n);
-  for(let i=n-1;i>=0;i--){
-    x[i]=M[i][n];
-    for(let j=i+1;j<n;j++)x[i]-=M[i][j]*x[j];
-    x[i]/=M[i][i];
-  }
-  return x;
-}
-
-// Régression polynomiale de degré deg : retourne coeffs [a0, a1, ..., a_deg]
-// y = a0 + a1*x + a2*x² + ... + a_deg*x^deg
-function polyFit(xs,ys,deg){
-  const n=xs.length, m=deg+1;
-  // Matrice normale : sum(xi^(j+k)) * a = sum(yi * xi^j)
-  const A=[], b=[];
-  for(let j=0;j<m;j++){
-    A[j]=[];
-    for(let k=0;k<m;k++){
-      let s=0; for(let i=0;i<n;i++) s+=Math.pow(xs[i],j+k);
-      A[j][k]=s;
-    }
-    let s=0; for(let i=0;i<n;i++) s+=ys[i]*Math.pow(xs[i],j);
-    b[j]=s;
-  }
-  return gaussSolve(A,b);
-}
-
-function polyEval(c,x){
-  let v=0; for(let i=c.length-1;i>=0;i--) v=v*x+c[i];
-  return v;
-}
-
-// Trouver les x où poly(x)=seuil dans [xMin,xMax] par scanning + bisection
-function findRoots(c,seuil,xMin,xMax){
-  const roots=[], steps=2000;
-  const dx=(xMax-xMin)/steps;
-  const f=x=>polyEval(c,x)-seuil;
-  for(let i=0;i<steps;i++){
-    const xa=xMin+i*dx, xb=xa+dx;
-    const fa=f(xa), fb=f(xb);
-    if(fa*fb<=0){
-      // Bisection
-      let lo=xa,hi=xb;
-      for(let k=0;k<60;k++){
-        const mid=(lo+hi)/2;
-        if(f(mid)*f(lo)<=0)hi=mid; else lo=mid;
-      }
-      roots.push((lo+hi)/2);
-    }
-  }
-  return roots;
-}
-
-function formatPoly(c){
-  const terms=[];
-  for(let i=c.length-1;i>=0;i--){
-    const v=c[i];
-    if(Math.abs(v)<1e-10)continue;
-    let s='';
-    if(terms.length===0) s=v.toFixed(5);
-    else s=(v>=0?' + ':' − ')+Math.abs(v).toFixed(5);
-    const sup=['','','²','³','⁴','⁵','⁶'];
-    if(i>=2) s+='x'+(sup[i]||'^'+i);
-    else if(i===1) s+='x';
-    terms.push(s);
-  }
-  return 'y = '+terms.join('');
-}
-
-// Données de la courbe en cours
-let curveData=null;
-
-const curveCanvas=document.getElementById('curveCanvas');
-const cctx=curveCanvas.getContext('2d');
-
-function tracerSRb(){
-  if(!S.diameters.length||!S.diameters.some(d=>d.diam!==null)){
-    toast('Sélectionnez les valeurs IQI'); return;
-  }
-  // Collecter les points valides
-  const pts=[];
-  S.diameters.forEach((d,i)=>{
-    if(d.diam!==null&&d.diam>0&&S.srb[i]&&isFinite(S.srb[i].SRb)){
-      pts.push({x:d.diam, y:S.srb[i].SRb*100, pi:i});
-    }
-  });
-  if(pts.length<3){
-    toast('Il faut au moins 3 points valides');
-    return;
-  }
-  const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
-  const deg=Math.min(4,pts.length-1); // pas plus que n-1
-  const coeffs=polyFit(xs,ys,deg);
-  if(!coeffs){statusEl.textContent='❌ Échec régression';return;}
-
-  const xMin=0, xDataMax=Math.max(...xs), xMax=xDataMax*1.05; // axe légèrement plus large pour lisibilité
-  const xCurveMax=xDataMax; // ne PAS extrapoler à droite
-  const seuil=20; // 20%
-  const roots=findRoots(coeffs,seuil,xMin,xCurveMax);
-  // Prendre la plus petite racine positive dans la zone montante (SRb croissant avec diamètre)
-  let cutoff=null;
-  for(const r of roots){
-    if(r>0.01&&r<xCurveMax){cutoff=r;break;}
-  }
-
-  curveData={pts,coeffs,deg,xMin,xMax,xCurveMax,seuil,cutoff};
-
-  // Afficher panneau
-  document.getElementById('curve-panel').style.display='';
-
-  // Équation
-  document.getElementById('curve-eq').textContent=formatPoly(coeffs);
-  document.getElementById('curve-cutoff').textContent=cutoff!==null
-    ?'Coupure 20% : '+cutoff.toFixed(4)+' mm':'Coupure 20% : non trouvée';
-
-  // Dessiner après que le layout soit calculé
-  requestAnimationFrame(()=>drawCurve());
-  statusEl.textContent='✅ Courbe tracée — degré '+deg+', '+pts.length+' points'
-    +(cutoff!==null?' — coupure à '+cutoff.toFixed(4)+' mm':'');
-}
-
-function drawCurve(expW,expH){
-  try{
-  if(!curveData)return;
-  const{pts,coeffs,xMin,xMax,xCurveMax,seuil,cutoff}=curveData;
-  const W=expW||curveCanvas.getBoundingClientRect().width||800;
-  const H=expH||curveCanvas.getBoundingClientRect().height||320;
-  if(W<10||H<10)return;
-  curveCanvas.width=W; curveCanvas.height=H;
-
-  const fs=W/800; // font scale factor (1.0 at 800px, 2.0 at 1600px)
-  const P={top:Math.round(28*fs),right:Math.round(24*fs),bottom:Math.round(48*fs),left:Math.round(62*fs)};
-  const gW=W-P.left-P.right, gH=H-P.top-P.bottom;
-  if(gW<10||gH<10)return;
-
-  const xRange=xMax-xMin||1;
-  const xCurveRange=xCurveMax-xMin||1;
-
-  // Plage Y — tenir compte des points ET de la courbe
-  let yMinD=-20, yMaxD=120;
-  pts.forEach(p=>{if(p.y<yMinD)yMinD=p.y-10;if(p.y>yMaxD)yMaxD=p.y+10;});
-  // Scanner la courbe pour ajuster les bornes Y
-  const scanStep=xCurveRange/200;
-  if(scanStep>0){
-    for(let x=xMin;x<=xCurveMax;x+=scanStep){
-      const yc=polyEval(coeffs,x);
-      if(yc<yMinD)yMinD=yc-5;
-      if(yc>yMaxD)yMaxD=yc+5;
-    }
-  }
-  // Arrondir à des multiples de 20, clamper pour éviter les plages extrêmes
-  yMinD=Math.max(-100,Math.floor(yMinD/20)*20);
-  yMaxD=Math.min(200,Math.ceil(yMaxD/20)*20);
-  if(yMaxD<=yMinD)yMaxD=yMinD+20;
-  const yRange=yMaxD-yMinD||1;
-
-  const toX=v=>P.left+((v-xMin)/xRange)*gW;
-  const toY=v=>P.top+(1-(v-yMinD)/yRange)*gH;
-
-  // Fond
-  cctx.fillStyle='#0d0d20'; cctx.fillRect(0,0,W,H);
-
-  // Grille
-  cctx.strokeStyle='#1a2240'; cctx.lineWidth=0.5;
-  for(let yv=Math.ceil(yMinD/20)*20;yv<=yMaxD;yv+=20){
-    const yp=toY(yv);
-    cctx.beginPath();cctx.moveTo(P.left,yp);cctx.lineTo(P.left+gW,yp);cctx.stroke();
-  }
-  for(let xv=0;xv<=xMax;xv+=0.05){
-    const xp=toX(xv);
-    if(xp>=P.left&&xp<=P.left+gW){
-      cctx.beginPath();cctx.moveTo(xp,P.top);cctx.lineTo(xp,P.top+gH);cctx.stroke();
-    }
-  }
-
-  // Axes
-  cctx.strokeStyle='#445';cctx.lineWidth=1;
-  cctx.beginPath();cctx.moveTo(P.left,P.top);cctx.lineTo(P.left,P.top+gH);cctx.lineTo(P.left+gW,P.top+gH);cctx.stroke();
-
-  // Ticks Y
-  cctx.fillStyle='#778';cctx.font=Math.round(10*fs)+'px Segoe UI';cctx.textAlign='right';
-  for(let yv=Math.ceil(yMinD/20)*20;yv<=yMaxD;yv+=20){
-    cctx.fillText(yv,P.left-5,toY(yv)+3);
-  }
-  // Ticks X
-  cctx.textAlign='center';
-  for(let xv=0;xv<=xMax;xv+=0.05){
-    const xp=toX(xv);
-    if(xp>=P.left&&xp<=P.left+gW){
-      cctx.fillText(xv.toFixed(2),xp,P.top+gH+Math.round(14*fs));
-    }
-  }
-
-  // Labels axes
-  cctx.fillStyle='#99a';cctx.font=Math.round(11*fs)+'px Segoe UI';cctx.textAlign='center';
-  cctx.fillText('Diamètre des fils [mm]',P.left+gW/2,H-Math.round(4*fs));
-  cctx.save();cctx.translate(Math.round(13*fs),P.top+gH/2);cctx.rotate(-Math.PI/2);
-  cctx.fillText('SRb [%]',0,0);cctx.restore();
-
-  // Clip zone
-  cctx.save();cctx.beginPath();cctx.rect(P.left,P.top,gW,gH);cctx.clip();
-
-  // Seuil 20%
-  const ySeuil=toY(seuil);
-  cctx.beginPath();cctx.moveTo(P.left,ySeuil);cctx.lineTo(P.left+gW,ySeuil);
-  cctx.strokeStyle='#e94560';cctx.lineWidth=Math.max(1,2*fs);cctx.stroke();
-  cctx.fillStyle='#e94560';cctx.font='bold '+Math.round(11*fs)+'px Segoe UI';cctx.textAlign='left';
-  cctx.fillText('Seuil SRb 20%',P.left+4,ySeuil-Math.round(6*fs));
-
-  // Courbe polynomiale (seulement jusqu'au dernier point mesuré)
-  const step=xCurveRange/500;
-  if(step>0){
-    cctx.beginPath();
-    let first=true;
-    for(let x=xMin;x<=xCurveMax;x+=step){
-      const y=polyEval(coeffs,x);
-      const px=toX(x),py=toY(y);
-      if(first){cctx.moveTo(px,py);first=false;}
-      else cctx.lineTo(px,py);
-    }
-    cctx.strokeStyle='#29b6f6';cctx.lineWidth=Math.max(1.5,2.5*fs);cctx.stroke();
-  }
-
-  // Points
-  const ds=Math.round(5*fs);
-  pts.forEach(p=>{
-    const col=PAIR_COLS[p.pi%PAIR_COLS.length];
-    const px=toX(p.x),py=toY(p.y);
-    // Losange
-    cctx.save();cctx.translate(px,py);cctx.rotate(Math.PI/4);
-    cctx.fillStyle=col;cctx.fillRect(-ds,-ds,ds*2,ds*2);
-    cctx.strokeStyle='#fff';cctx.lineWidth=Math.max(1,fs);cctx.strokeRect(-ds,-ds,ds*2,ds*2);
-    cctx.restore();
-  });
-
-  // Cutoff point
-  if(cutoff!==null){
-    const cx=toX(cutoff),cy=toY(seuil);
-    const cr=Math.round(6*fs);
-    cctx.beginPath();cctx.arc(cx,cy,cr,0,Math.PI*2);
-    cctx.fillStyle='#e94560';cctx.fill();cctx.strokeStyle='#fff';cctx.lineWidth=Math.max(1,1.5*fs);cctx.stroke();
-    // Ligne verticale pointillée
-    cctx.beginPath();cctx.moveTo(cx,P.top);cctx.lineTo(cx,P.top+gH);
-    cctx.strokeStyle='#e9456088';cctx.lineWidth=Math.max(1,fs);cctx.setLineDash([4*fs,3*fs]);cctx.stroke();cctx.setLineDash([]);
-    // Label
-    cctx.fillStyle='#e94560';cctx.font='bold '+Math.round(12*fs)+'px Segoe UI';cctx.textAlign='center';
-    cctx.fillText(cutoff.toFixed(3)+' mm',cx,cy-Math.round(14*fs));
-  }
-
-  cctx.restore(); // fin clip
-
-  // Titre
-  const fTitle=Math.max(12,Math.round(W/80));
-  cctx.fillStyle='#ddd';cctx.font='bold '+fTitle+'px Segoe UI';cctx.textAlign='center';
-  cctx.fillText('SRb de l\'IQI — '+(S.filename||''),P.left+gW/2,P.top-8);
-
-  // Équation sur le graphe
-  const fEq=Math.max(10,Math.round(W/100));
-  cctx.fillStyle='#29b6f6cc';cctx.font='bold '+fEq+'px Segoe UI';cctx.textAlign='left';
-  cctx.fillText(formatPoly(coeffs),P.left+8,P.top+fEq+8);
-  }catch(e){console.error('drawCurve error:',e);}
-}
-
-// Resize - debounce to prevent loop
-let curveDrawPending=false;
-new ResizeObserver(()=>{
-  if(curveData&&!curveDrawPending){
-    curveDrawPending=true;
-    requestAnimationFrame(()=>{drawCurve();curveDrawPending=false;});
-  }
-}).observe(document.getElementById('curve-panel'));
-
-function exportCurve(){
-  if(!curveData)return;
-  drawCurve(1600,640);
-  const link=document.createElement('a');
-  link.download=(S.filename||'SRb')+'_courbe.png';
-  link.href=curveCanvas.toDataURL('image/png');
-  link.click();
-  drawCurve(); // redraw at normal size
-  statusEl.textContent='✅ Image courbe exportée';
-}
-
-function exportHautBas(){
-  if(!curveData||!S.line||!S.raw16){toast('Données insuffisantes');return;}
-  const EW=1600, halfH=640, EH=halfH*2;
-  const tmp=document.createElement('canvas');
-  tmp.width=EW; tmp.height=EH;
-  const ctx=tmp.getContext('2d');
-
-  // === PARTIE HAUTE : image TIFF recadrée autour de la ligne ===
-  const{x1,y1,x2,y2}=S.line, lw=S.lineWidth;
-  // Boîte englobante avec marge
-  const margin=Math.max(60, lw*3);
-  const bx0=Math.max(0,Math.min(x1,x2)-margin);
-  const by0=Math.max(0,Math.min(y1,y2)-margin);
-  const bx1=Math.min(S.width, Math.max(x1,x2)+margin);
-  const by1=Math.min(S.height,Math.max(y1,y2)+margin);
-  const bw=bx1-bx0, bh=by1-by0;
-  if(bw<2||bh<2)return;
-
-  // Rendre la zone TIFF dans un petit canvas temporaire
-  const tiffC=document.createElement('canvas');
-  tiffC.width=bw; tiffC.height=bh;
-  const tctx=tiffC.getContext('2d');
-  const W=+wSlider.value||1, L=+lSlider.value, lo=L-W/2, hi=L+W/2;
-  const imgD=tctx.createImageData(bw,bh);
-  const d=imgD.data;
-  for(let row=0;row<bh;row++){
-    for(let col=0;col<bw;col++){
-      const si=(by0+row)*S.width+(bx0+col);
-      let v=Math.round((S.raw16[si]-lo)/(hi-lo)*255);
-      v=v<0?0:v>255?255:v;
-      const p=(row*bw+col)*4; d[p]=d[p+1]=d[p+2]=v; d[p+3]=255;
-    }
-  }
-  tctx.putImageData(imgD,0,0);
-
-  // Dessiner la ligne sur le crop
-  const ox=bx0, oy=by0; // offset
-  const lx1=x1-ox, ly1=y1-oy, lx2=x2-ox, ly2=y2-oy;
-  // Bande épaisseur
-  if(lw>1){
-    const dx=lx2-lx1,dy=ly2-ly1,ll=Math.sqrt(dx*dx+dy*dy)||1;
-    const nx=-dy/ll*lw/2, ny=dx/ll*lw/2;
-    tctx.beginPath();tctx.moveTo(lx1+nx,ly1+ny);tctx.lineTo(lx2+nx,ly2+ny);
-    tctx.lineTo(lx2-nx,ly2-ny);tctx.lineTo(lx1-nx,ly1-ny);tctx.closePath();
-    tctx.fillStyle='rgba(233,69,96,0.22)';tctx.fill();
-  }
-  tctx.beginPath();tctx.moveTo(lx1,ly1);tctx.lineTo(lx2,ly2);
-  tctx.strokeStyle='#e94560';tctx.lineWidth=2;tctx.setLineDash([6,3]);tctx.stroke();tctx.setLineDash([]);
-  for(const[px,py]of[[lx1,ly1],[lx2,ly2]]){
-    tctx.beginPath();tctx.arc(px,py,5,0,Math.PI*2);
-    tctx.fillStyle='#e94560';tctx.fill();tctx.strokeStyle='#fff';tctx.lineWidth=1;tctx.stroke();
-  }
-
-  // Scaler le crop dans la moitié haute en conservant l'aspect ratio
-  ctx.fillStyle='#1a1a2e'; ctx.fillRect(0,0,EW,EH);
-  const scaleX=EW/bw, scaleY=halfH/bh, sc=Math.min(scaleX,scaleY);
-  const dw=Math.round(bw*sc), dh=Math.round(bh*sc);
-  const dx=Math.round((EW-dw)/2), dy=Math.round((halfH-dh)/2);
-  ctx.drawImage(tiffC,0,0,bw,bh, dx,dy,dw,dh);
-
-  // Légende image
-  ctx.fillStyle='#ffffffaa';ctx.font='bold 14px Segoe UI';ctx.textAlign='left';
-  ctx.fillText((S.filename||'TIFF')+' — ligne '+Math.round(Math.sqrt((x2-x1)**2+(y2-y1)**2))+'px × '+lw+'px',8,halfH-8);
-
-  // === PARTIE BASSE : courbe SRb ===
-  drawCurve(EW,halfH);
-  ctx.drawImage(curveCanvas,0,0,EW,halfH, 0,halfH,EW,halfH);
-  drawCurve(); // restaurer taille normale
-
-  // Séparation
-  ctx.strokeStyle='#e94560';ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(0,halfH);ctx.lineTo(EW,halfH);ctx.stroke();
-
-  // Export
-  const link=document.createElement('a');
-  link.download=(S.filename||'SRb')+'_HautBas.png';
-  link.href=tmp.toDataURL('image/png');
-  link.click();
-  statusEl.textContent='✅ Image Haut/Bas exportée';
-}
-
-function exportResult(){
-  if(!curveData)return;
-  const{pts,coeffs,deg,seuil,cutoff}=curveData;
-  const sep=';';
-  const lines=[];
-  lines.push('Fichier'+sep+(S.filename||''));
-  lines.push('');
-  lines.push('Régression polynomiale degré '+deg);
-  lines.push('Équation'+sep+formatPoly(coeffs));
-  lines.push('Coefficients (a0…a'+deg+')'+sep+coeffs.map(c=>c.toFixed(8)).join(sep));
-  lines.push('');
-  lines.push('Seuil SRb (%)'+sep+seuil);
-  lines.push('Coupure diamètre (mm)'+sep+(cutoff!==null?cutoff.toFixed(5):'non trouvée'));
-  lines.push('');
-  lines.push('Paire'+sep+'Diamètre (mm)'+sep+'SRb (%)'+sep+'SRb fit (%)');
-  pts.forEach(p=>{
-    lines.push('P'+(p.pi+1)+sep+p.x.toFixed(3)+sep+p.y.toFixed(2)+sep+polyEval(coeffs,p.x).toFixed(2));
-  });
-  const csv='\uFEFF'+lines.join('\r\n');
-  try{
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=(S.filename||'SRb')+'_resultat.csv';a.click();
-    URL.revokeObjectURL(url);
-    statusEl.textContent='✅ Résultat exporté';
-  }catch(e){
-    navigator.clipboard.writeText(csv).then(
-      ()=>{statusEl.textContent='📋 Résultat copié';},
-      ()=>{statusEl.textContent='❌ Export échoué';}
-    );
-  }
-}
-
-function clampZoom(){
-  const vis=S.profileLen/Z.scale;
-  Z.offset=Math.max(0,Math.min(S.profileLen-vis,Z.offset));
-}
-function resetZoom(){
-  Z.scale=1; Z.offset=0; B.L=null; B.R=null; B.pending=null;
-  updateZoomSelBtn(); requestAnimationFrame(drawGraph);
-}
-function startBorne(which){
-  B.pending=which;
-  graphCanvas.style.cursor='crosshair';
-  statusEl.textContent=`Cliquez sur le graphe pour placer la borne ${which==='L'?'GAUCHE':'DROITE'}`;
-}
-function zoomToSel(){
-  if(B.L===null||B.R===null)return;
-  const a=Math.min(B.L,B.R), b=Math.max(B.L,B.R);
-  if(b<=a)return;
-  Z.offset=a; Z.scale=S.profileLen/(b-a);
-  clampZoom(); requestAnimationFrame(drawGraph);
-  statusEl.textContent=`🔍 Zoom [${Math.round(a)}…${Math.round(b)}]`;
-}
-
-// ══════════════════════════════════════════════════════
-// MÉTRIQUES GRAPHE — UNE SEULE FONCTION
-// Travaille toujours en coordonnées CSS (cohérent avec les événements souris)
-// drawGraph applique un scale pour que le rendu canvas soit identique
-// ══════════════════════════════════════════════════════
-function getMetrics(){
-  const rect=graphCanvas.getBoundingClientRect();
-  const W=rect.width, H=rect.height;
-  if(!S.profile||W<10||H<10)return null;
-  const N=S.profileLen;
-  const vis=N/Z.scale;
-  const i0=Math.max(0,Math.floor(Z.offset));
-  const i1=Math.min(N-1,Math.ceil(Z.offset+vis));
-  let yMin=Infinity, yMax=-Infinity;
-  for(let i=i0;i<=i1;i++){if(S.profile[i]<yMin)yMin=S.profile[i];if(S.profile[i]>yMax)yMax=S.profile[i];}
-  const pad=0.07, rng=yMax-yMin||1;
-  yMin-=rng*pad; yMax+=rng*pad;
-  const gW=W-PAD.left-PAD.right, gH=H-PAD.top-PAD.bottom;
-  const toY  = v  => PAD.top+(1-(v-yMin)/(yMax-yMin))*gH;
-  const iToX = i  => PAD.left+((i-Z.offset)/vis)*gW;
-  const xToI = x  => Z.offset+((x-PAD.left)/gW)*vis;
-  return{W,H,N,gW,gH,yMin,yMax,i0,i1,toY,iToX,xToI};
-}
-
-// ══════════════════════════════════════════════════════
-// HIT TESTS
-// ══════════════════════════════════════════════════════
-function nearestPeak(p,m){
-  let best=null, bd=Infinity;
-  S.peaks.forEach((pk,i)=>{
-    const xp=m.iToX(pk.idx), yp=m.toY(S.profile[pk.idx]);
-    const d=Math.sqrt((p.x-xp)**2+(p.y-yp)**2);
-    if(d<HIT&&d<bd){bd=d;best=i;}
-  });
-  return best;
-}
-function nearestPairZone(p,m){
-  for(let i=0;i<S.pairs.length;i++){
-    const{li,ri}=S.pairs[i];
-    const xa=m.iToX(S.peaks[li].idx), xb=m.iToX(S.peaks[ri].idx);
-    if(p.x>=xa&&p.x<=xb&&p.y>=PAD.top&&p.y<=PAD.top+m.gH)return i;
-  }
-  return null;
-}
-function hitBorne(p,m){
-  const hY=PAD.top+m.gH;
-  for(const w of['L','R']){
-    if(B[w]===null)continue;
-    const hx=m.iToX(B[w]);
-    if(Math.abs(p.x-hx)<10&&Math.abs(p.y-hY)<14)return w;
-  }
-  return null;
-}
-function snapToMin(idx){
-  const prof=S.profile, N=prof.length;
-  let best=idx;
-  for(let k=Math.max(0,idx-1);k<=Math.min(N-1,idx+1);k++)
-    if(prof[k]<prof[best])best=k;
-  return best;
-}
-function gpt(e){
-  const r=graphCanvas.getBoundingClientRect();
-  return{x:e.clientX-r.left, y:e.clientY-r.top};
-}
-
-// ══════════════════════════════════════════════════════
-// EVENTS GRAPHE
-// ══════════════════════════════════════════════════════
-graphCanvas.addEventListener('contextmenu',e=>{
-  e.preventDefault();
-  if(!S.profile||S.mode!=='peak')return;
-  const m=getMetrics(); if(!m)return;
-  const pi=nearestPeak(gpt(e),m);
-  if(pi!==null){removePeak(pi);requestAnimationFrame(drawGraph);}
-});
-
-graphCanvas.addEventListener('mousedown',e=>{
-  if(!S.profile)return;
-  const p=gpt(e);
-  const m=getMetrics(); if(!m)return;
-
-  // Placement borne en attente
-  if(B.pending){
-    B[B.pending]=Math.max(0,Math.min(m.N-1,Math.round(m.xToI(p.x))));
-    B.pending=null;
-    graphCanvas.style.cursor='default';
-    updateZoomSelBtn(); requestAnimationFrame(drawGraph);
-    statusEl.textContent=`Borne G=${B.L!==null?Math.round(B.L):'—'} / D=${B.R!==null?Math.round(B.R):'—'}`;
-    return;
-  }
-
-  // Drag borne existante
-  const bh=hitBorne(p,m);
-  if(bh){B.dragging=bh; graphCanvas.style.cursor='ew-resize'; return;}
-
-  const pi=nearestPeak(p,m);
-
-  if(S.mode==='pair'){
-    if(pi!==null){
-      const idx=S.pairSelect.indexOf(pi);
-      if(idx>=0)S.pairSelect.splice(idx,1);
-      else{S.pairSelect.push(pi); if(S.pairSelect.length===2)manualPair();}
-      requestAnimationFrame(drawGraph);
-    } else {
-      const pairI=nearestPairZone(p,m);
-      if(pairI!==null){S.selectedPair=S.selectedPair===pairI?null:pairI; updateUnpairBtn(); requestAnimationFrame(drawGraph);}
-    }
-    return;
-  }
-
-  if(S.mode==='peak'){
-    if(pi!==null){S.dragPeak=pi;}
-    else{
-      const idx=Math.round(m.xToI(p.x));
-      if(idx>=0&&idx<m.N){
-        const snapped=snapToMin(idx);
-        S.peaks.push({idx:snapped,pairId:null,prom:0});
-        S.peaks.sort((a,b)=>a.idx-b.idx);
-        statusEl.textContent=`Pic ajouté à l'index ${snapped}`;
-        requestAnimationFrame(drawGraph);
-      }
-    }
-    return;
-  }
-
-  if(pi!==null) S.dragPeak=pi;
-});
-
-graphCanvas.addEventListener('mousemove',e=>{
-  if(!S.profile)return;
-  const p=gpt(e);
-  const m=getMetrics(); if(!m)return;
-
-  if(B.dragging){
-    B[B.dragging]=Math.max(0,Math.min(m.N-1,Math.round(m.xToI(p.x))));
-    updateZoomSelBtn(); requestAnimationFrame(drawGraph); return;
-  }
-
-  if(S.dragPeak!==null){
-    const pi=S.dragPeak;
-    let idx=Math.max(0,Math.min(m.N-1,Math.round(m.xToI(p.x))));
-    if(pi>0)idx=Math.max(idx,S.peaks[pi-1].idx+1);
-    if(pi<S.peaks.length-1)idx=Math.min(idx,S.peaks[pi+1].idx-1);
-    S.peaks[pi].idx=snapToMin(idx);
-    requestAnimationFrame(drawGraph); return;
-  }
-
-  const bh=hitBorne(p,m);
-  const newH=nearestPeak(p,m);
-  if(newH!==S.hoverPeak){S.hoverPeak=newH; requestAnimationFrame(drawGraph);}
-  graphCanvas.style.cursor = B.pending?'crosshair' : (bh||newH!==null)?'ew-resize':'default';
-});
-
-graphCanvas.addEventListener('mouseup',()=>{
-  S.dragPeak=null; B.dragging=null;
-  if(!B.pending)graphCanvas.style.cursor='default';
-});
-graphCanvas.addEventListener('mouseleave',()=>{
-  S.dragPeak=null; B.dragging=null; S.hoverPeak=null;
-  requestAnimationFrame(drawGraph);
-});
-
-graphCanvas.addEventListener('wheel',e=>{
-  e.preventDefault();
-  if(!S.profile)return;
-  const m=getMetrics(); if(!m)return;
-  const p=gpt(e);
-  const cx=(p.x-PAD.left)/m.gW;
-  const idxAnchor=Z.offset+cx*(m.N/Z.scale);
-  const factor=e.deltaY<0?1.4:1/1.4;
-  Z.scale=Math.max(1,Math.min(m.N/4,Z.scale*factor));
-  Z.offset=idxAnchor-cx*(m.N/Z.scale);
-  clampZoom(); requestAnimationFrame(drawGraph);
-},{passive:false});
-
-graphCanvas.addEventListener('dblclick',()=>resetZoom());
-
-// ══════════════════════════════════════════════════════
-// DESSIN GRAPHE
-// ══════════════════════════════════════════════════════
-function toggleGraph(){
-  const p=document.getElementById('graph-panel');
-  graphCollapsed=!graphCollapsed;
-  p.classList.toggle('collapsed',graphCollapsed);
-  document.getElementById('graph-toggle').textContent=graphCollapsed?'▲':'▼';
-  setGraphBtns(!graphCollapsed);
-  if(!graphCollapsed)requestAnimationFrame(drawGraph);
-}
-function showGraph(){
-  const p=document.getElementById('graph-panel');
-  graphCollapsed=false; p.classList.remove('collapsed');
-  document.getElementById('graph-toggle').textContent='▼';
-  setGraphBtns(true); requestAnimationFrame(drawGraph);
-}
-
-function drawGraph(){
-  const m=getMetrics(); if(!m)return;
-  const{W,H,N,gW,gH,toY,iToX,i0,i1}=m;
-
-  // Synchroniser la résolution interne du canvas avec sa taille CSS
-  graphCanvas.width=W; graphCanvas.height=H;
-
-  gctx.fillStyle='#0d0d20'; gctx.fillRect(0,0,W,H);
-
-  // Clip zone tracé
-  gctx.save(); gctx.beginPath(); gctx.rect(PAD.left,PAD.top,gW,gH); gctx.clip();
-
-  // Grille Y
-  for(let t=0;t<=6;t++){
-    const yv=m.yMin+(t/6)*(m.yMax-m.yMin), yp=toY(yv);
-    gctx.strokeStyle='#1a2240'; gctx.lineWidth=1;
-    gctx.beginPath(); gctx.moveTo(PAD.left,yp); gctx.lineTo(PAD.left+gW,yp); gctx.stroke();
-  }
-
-  // Zones paires
-  S.pairs.forEach((pair,pi)=>{
-    const col=PAIR_COLS[pi%PAIR_COLS.length];
-    const xa=iToX(S.peaks[pair.li].idx), xb=iToX(S.peaks[pair.ri].idx);
-    gctx.fillStyle=col+(S.selectedPair===pi?'28':'14');
-    gctx.fillRect(xa,PAD.top,xb-xa,gH);
-    if(S.selectedPair===pi){
-      gctx.strokeStyle=col+'88'; gctx.lineWidth=1.5; gctx.setLineDash([3,3]);
-      gctx.strokeRect(xa,PAD.top,xb-xa,gH); gctx.setLineDash([]);
-    }
-    // Label
-    const lx=(xa+xb)/2;
-    if(lx>PAD.left&&lx<PAD.left+gW){
-      gctx.fillStyle=col; gctx.font='bold 9px Segoe UI'; gctx.textAlign='center';
-      gctx.fillText(`P${pi+1}`,lx,PAD.top+11);
-    }
-  });
-
-  // Zone sélection borne
-  if(B.L!==null&&B.R!==null){
-    const xa=iToX(Math.min(B.L,B.R)), xb=iToX(Math.max(B.L,B.R));
-    gctx.fillStyle='rgba(255,255,255,0.04)'; gctx.fillRect(xa,PAD.top,xb-xa,gH);
-    gctx.strokeStyle='rgba(255,255,255,0.18)'; gctx.lineWidth=1; gctx.setLineDash([2,2]);
-    gctx.strokeRect(xa,PAD.top,xb-xa,gH); gctx.setLineDash([]);
-  }
-
-  // Zones SRb (B1, B2, A) si calculées
-  if(S.srb&&S.srb.length){
-    S.srb.forEach(r=>{
-      // B1 zone (fond gauche)
-      const xB1a=iToX(r.B1i0), xB1b=iToX(r.B1i1);
-      gctx.fillStyle='rgba(79,195,247,0.18)';
-      gctx.fillRect(xB1a,PAD.top,xB1b-xB1a,gH);
-      // B2 zone (fond droit)
-      const xB2a=iToX(r.B2i0), xB2b=iToX(r.B2i1);
-      gctx.fillStyle='rgba(79,195,247,0.18)';
-      gctx.fillRect(xB2a,PAD.top,xB2b-xB2a,gH);
-      // Ligne horizontale B moyen
-      const yBm=toY(r.Bmoyen);
-      gctx.beginPath();gctx.moveTo(xB1a,yBm);gctx.lineTo(xB2b,yBm);
-      gctx.strokeStyle='rgba(79,195,247,0.5)';gctx.lineWidth=1;gctx.setLineDash([4,3]);gctx.stroke();gctx.setLineDash([]);
-      // Point A (max entre pics)
-      const xA=iToX(r.Aidx), yA=toY(r.Aval);
-      gctx.beginPath();gctx.arc(xA,yA,5,0,Math.PI*2);
-      gctx.fillStyle='#ff6b6b';gctx.fill();gctx.strokeStyle='#fff';gctx.lineWidth=1;gctx.stroke();
-      gctx.fillStyle='#ff6b6b';gctx.font='bold 8px Segoe UI';gctx.textAlign='center';
-      gctx.fillText('A',xA,yA-8);
-      // Ligne horizontale T moyen
-      const yTm=toY(r.Tmoyen);
-      const xT1=iToX(r.iT1), xT2=iToX(r.iT2);
-      gctx.beginPath();gctx.moveTo(xT1,yTm);gctx.lineTo(xT2,yTm);
-      gctx.strokeStyle='rgba(255,224,128,0.5)';gctx.lineWidth=1;gctx.setLineDash([4,3]);gctx.stroke();gctx.setLineDash([]);
+    filtered.forEach(app => {
+      const a = document.createElement('a');
+      a.className = 'card';
+      
+      // ═══ URL DYNAMIQUE SELON LA LANGUE ═══
+      // Construit : app1/fr/ ou app1/en/
+      a.href = `${app.folder}/${currentLang}/`;
+      
+      const name = getText(app, 'name');
+      const desc = getText(app, 'desc');
+      const tag = getText(app, 'tag');
+      
+      a.innerHTML = `
+        <div class="card-icon">${app.icon}</div>
+        <div class="card-name">${name}</div>
+        <div class="card-desc">${desc}</div>
+        ${tag ? `<span class="card-tag">${tag}</span>` : ''}
+      `;
+      grid.appendChild(a);
     });
   }
 
-  // Courbe fill
-  const vis=N/Z.scale;
-  gctx.beginPath(); gctx.moveTo(iToX(i0),toY(S.profile[i0]));
-  for(let i=i0+1;i<=i1;i++) gctx.lineTo(iToX(i),toY(S.profile[i]));
-  gctx.lineTo(iToX(i1),PAD.top+gH); gctx.lineTo(iToX(i0),PAD.top+gH); gctx.closePath();
-  const grad=gctx.createLinearGradient(0,PAD.top,0,PAD.top+gH);
-  grad.addColorStop(0,'rgba(233,69,96,0.28)'); grad.addColorStop(1,'rgba(233,69,96,0.02)');
-  gctx.fillStyle=grad; gctx.fill();
-
-  // Courbe trait
-  gctx.beginPath(); gctx.moveTo(iToX(i0),toY(S.profile[i0]));
-  for(let i=i0+1;i<=i1;i++) gctx.lineTo(iToX(i),toY(S.profile[i]));
-  gctx.strokeStyle='#e94560'; gctx.lineWidth=1.5; gctx.stroke();
-
-  // Pics
-  S.peaks.forEach((pk,pi)=>{
-    const xp=iToX(pk.idx);
-    if(xp<PAD.left-HIT||xp>PAD.left+gW+HIT)return;
-    const yp=toY(S.profile[pk.idx]);
-    const paired=pk.pairId!==null;
-    const pIdx=paired?S.pairs.findIndex(p=>p.id===pk.pairId):-1;
-    const col=paired?PAIR_COLS[pIdx%PAIR_COLS.length]:'#e94560';
-    const r=(S.hoverPeak===pi||S.pairSelect.includes(pi))?8:5.5;
-    // Ligne pointillée
-    gctx.beginPath(); gctx.moveTo(xp,PAD.top); gctx.lineTo(xp,yp);
-    gctx.strokeStyle=col+'55'; gctx.lineWidth=1; gctx.setLineDash([3,3]); gctx.stroke(); gctx.setLineDash([]);
-    // Disque
-    gctx.beginPath(); gctx.arc(xp,yp,r,0,Math.PI*2);
-    gctx.fillStyle=col; gctx.fill();
-    gctx.strokeStyle=S.pairSelect.includes(pi)?'#fff':'rgba(255,255,255,0.5)';
-    gctx.lineWidth=S.pairSelect.includes(pi)?2:1; gctx.stroke();
-    // Labels
-    if(!paired){gctx.fillStyle='#e94560';gctx.font='8px Segoe UI';gctx.textAlign='center';gctx.fillText('✕',xp,yp-9);}
-    if(paired){
-      const lbl=pk.idx===S.peaks[S.pairs[pIdx].li].idx?'T1':'T2';
-      gctx.font='bold 9px Segoe UI'; gctx.fillStyle=col; gctx.textAlign='center';
-      gctx.fillText(`P${pIdx+1}·${lbl}`,xp,yp+16);
-      gctx.fillStyle='#ccc'; gctx.font='8px Segoe UI';
-      gctx.fillText(Math.round(S.profile[pk.idx]),xp,yp-9);
-    }
+  search.addEventListener('input', e => render(e.target.value));
+  
+  langCheckbox.addEventListener('change', (e) => {
+    currentLang = e.target.checked ? 'en' : 'fr';
+    localStorage.setItem('apphub-lang', currentLang);
+    updateUI();
   });
 
-  gctx.restore(); // fin clip
-
-  // Axes
-  gctx.strokeStyle='#334'; gctx.lineWidth=1;
-  gctx.beginPath(); gctx.moveTo(PAD.left,PAD.top); gctx.lineTo(PAD.left,PAD.top+gH); gctx.lineTo(PAD.left+gW,PAD.top+gH); gctx.stroke();
-
-  // Ticks Y
-  for(let t=0;t<=6;t++){
-    const yv=m.yMin+(t/6)*(m.yMax-m.yMin), yp=toY(yv);
-    gctx.fillStyle='#556'; gctx.font='9px Segoe UI'; gctx.textAlign='right';
-    gctx.fillText(Math.round(yv),PAD.left-4,yp+3);
-  }
-
-  // Ticks X adaptatifs
-  const step=Math.pow(10,Math.floor(Math.log10(vis/8)));
-  const xStart=Math.ceil(Z.offset/step)*step;
-  for(let xi=xStart;xi<=Z.offset+vis;xi+=step){
-    const xp=iToX(xi);
-    if(xp<PAD.left||xp>PAD.left+gW)continue;
-    gctx.strokeStyle='#1a2240'; gctx.lineWidth=1;
-    gctx.beginPath(); gctx.moveTo(xp,PAD.top); gctx.lineTo(xp,PAD.top+gH); gctx.stroke();
-    gctx.fillStyle='#556'; gctx.font='9px Segoe UI'; gctx.textAlign='center';
-    gctx.fillText(Math.round(xi),xp,H-PAD.bottom+11);
-  }
-
-  // Labels axes
-  gctx.fillStyle='#778'; gctx.font='9px Segoe UI'; gctx.textAlign='center';
-  gctx.fillText('Distance (px)',PAD.left+gW/2,H-4);
-  gctx.save(); gctx.translate(11,PAD.top+gH/2); gctx.rotate(-Math.PI/2);
-  gctx.fillText('Niveau de gris (16 bit)',0,0); gctx.restore();
-
-  // Handles bornes L/R
-  for(const[w,col]of[['L','#29b6f6'],['R','#ffb74d']]){
-    if(B[w]===null)continue;
-    const hx=iToX(B[w]), hY=PAD.top+gH;
-    gctx.save(); gctx.beginPath(); gctx.rect(PAD.left,PAD.top,gW,gH); gctx.clip();
-    gctx.beginPath(); gctx.moveTo(hx,PAD.top); gctx.lineTo(hx,hY);
-    gctx.strokeStyle=col+'99'; gctx.lineWidth=1.5; gctx.setLineDash([4,3]); gctx.stroke(); gctx.setLineDash([]);
-    gctx.restore();
-    gctx.beginPath(); gctx.moveTo(hx,hY); gctx.lineTo(hx-7,hY+10); gctx.lineTo(hx+7,hY+10); gctx.closePath();
-    gctx.fillStyle=col; gctx.fill(); gctx.strokeStyle='#fff'; gctx.lineWidth=1; gctx.stroke();
-    gctx.fillStyle='#fff'; gctx.font='bold 7px Segoe UI'; gctx.textAlign='center'; gctx.fillText(w,hx,hY+8);
-  }
-
-  // Indicateur zoom
-  const zlbl=document.getElementById('zoom-lbl');
-  if(Z.scale>1.05){zlbl.style.display='';zlbl.textContent=`×${Z.scale.toFixed(1)}`;}
-  else zlbl.style.display='none';
-}
-
-new ResizeObserver(()=>{if(!graphCollapsed&&S.profile)requestAnimationFrame(drawGraph);})
-  .observe(document.getElementById('graph-panel'));
-
-// ══════════════════════════════════════════════════════
-// RENDU IMAGE
-// ══════════════════════════════════════════════════════
-function renderImage(){
-  if(!S.raw16)return;
-  const W=+wSlider.value||1, L=+lSlider.value, lo=L-W/2, hi=L+W/2;
-  const img=ictx.createImageData(S.width,S.height); const d=img.data;
-  for(let i=0;i<S.raw16.length;i++){
-    let v=Math.round((S.raw16[i]-lo)/(hi-lo)*255);
-    v=v<0?0:v>255?255:v;
-    const p=i*4; d[p]=d[p+1]=d[p+2]=v; d[p+3]=255;
-  }
-  ictx.putImageData(img,0,0); if(S.line)drawOverlay(S.line,null);
-}
-
-// ══════════════════════════════════════════════════════
-// TIFF
-// ══════════════════════════════════════════════════════
-function loadFile(f){
-  statusEl.textContent=`Chargement ${f.name}…`;
-  const r=new FileReader();
-  r.onload=e=>{try{parseTIFF(e.target.result,f.name);}catch(err){statusEl.textContent='❌ '+err.message;}};
-  r.readAsArrayBuffer(f);
-}
-function parseTIFF(buf,fname){
-  const dv=new DataView(buf); const magic=dv.getUint16(0,false); let le;
-  if(magic===0x4949)le=true; else if(magic===0x4D4D)le=false; else throw new Error('Pas un TIFF valide');
-  if(dv.getUint16(2,le)!==42)throw new Error('Version TIFF non supportée');
-  const io=dv.getUint32(4,le), tags={}, n=dv.getUint16(io,le);
-  for(let i=0;i<n;i++){const b=io+2+i*12;tags[dv.getUint16(b,le)]=rtv(dv,le,dv.getUint16(b+2,le),dv.getUint32(b+4,le),b+8);}
-  const W=sc(tags[256]), H=sc(tags[257]), bps=sc(tags[258]??8), comp=sc(tags[259]??1);
-  if(bps!==16)throw new Error(`BitsPerSample=${bps}`);
-  if(comp!==1)throw new Error(`Compression ${comp}`);
-  const offs=ar(tags[273]), rps=sc(tags[278]??H);
-  const raw=new Uint16Array(W*H); let idx=0;
-  for(let s=0;s<offs.length;s++){const rows=Math.min(rps,H-s*rps);for(let p=0;p<rows*W;p++)raw[idx++]=dv.getUint16(offs[s]+p*2,le);}
-  let mn=65535, mx=0;
-  for(let i=0;i<raw.length;i++){if(raw[i]<mn)mn=raw[i];if(raw[i]>mx)mx=raw[i];}
-  Object.assign(S,{raw16:raw,width:W,height:H,min16:mn,max16:mx,filename:fname.replace(/\.[^.]+$/,''),line:null,p1:null,drawing:false,profile:null,peaks:[],pairs:[],pairSelect:[],selectedPair:null});
-  Z.scale=1; Z.offset=0; B.L=null; B.R=null; B.pending=null;
-  lSlider.value=Math.round((mn+mx)/2); wSlider.value=mx-mn;
-  dropZone.classList.add('hidden');
-  imgCanvas.width=lineCanvas.width=W; imgCanvas.height=lineCanvas.height=H;
-  btnValidate.disabled=true; btnClear.disabled=true;
-  infoEl.textContent=`${fname} — ${W}×${H} — [${mn}…${mx}]`;
-  statusEl.textContent=`✅ ${W}×${H}px — Tracez une ligne de profil`;
-  renderImage();
-}
-const TS=[0,1,1,2,4,8,1,1,2,4,8,4,8];
-function rtv(dv,le,type,count,vo){
-  const sz=TS[type]||1; let off=sz*count<=4?vo:dv.getUint32(vo,le); const v=[];
-  for(let i=0;i<count;i++){const o=off+i*sz;switch(type){
-    case 1:case 6:v.push(dv.getUint8(o));break;case 3:case 8:v.push(dv.getUint16(o,le));break;
-    case 4:case 9:v.push(dv.getUint32(o,le));break;case 5:v.push(dv.getUint32(o,le)/dv.getUint32(o+4,le));break;
-    case 2:v.push(String.fromCharCode(dv.getUint8(o)));break;default:v.push(dv.getUint8(o));}}
-  return count===1?v[0]:v;
-}
-function sc(v){return Array.isArray(v)?v[0]:v;}
-function ar(v){return Array.isArray(v)?v:[v];}
+  updateUI();
 </script>
 </body>
 </html>
