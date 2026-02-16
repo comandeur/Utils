@@ -219,8 +219,8 @@
 <header>
   <div class="header-top">
     <div>
-      <div class="site-title" id="site-title">Utils <span>Apps</span></div>
-      <div class="site-sub" id="site-sub">Apps prompted and coded by kiczewski florent</div>
+      <div class="site-title" id="site-title">Apps <span>Utilitaires</span></div>
+      <div class="site-sub" id="site-sub">Apps prompting et coding par kiczewski florent</div>
     </div>
     
     <label class="lang-toggle" title="Changer de langue / Switch language">
@@ -251,13 +251,13 @@
   const i18n = {
     fr: {
       siteTitle: "Apps <span>Utilitaires</span>",
-      siteSub: "Apps prompting et coding kiczewski florent",
+      siteSub: "Apps prompting et coding par kiczewski florent",
       searchPlaceholder: "Rechercher une app…",
       emptyMessage: "Aucune application trouvée.",
       footer: "Distribuer gratuitement"
     },
     en: {
-      siteTitle: "Utils <span>Apps</span>",
+      siteTitle: "<span>Utils</span> Apps",
       siteSub: "Apps prompting and coding by kiczewski florent",
       searchPlaceholder: "Search for an app…",
       emptyMessage: "No application found.",
@@ -265,10 +265,11 @@
     }
   };
 
-  // Vos applications - structure de dossiers : app1/fr/ et app1/en/
+  // Vos applications - structure de dossiers : app1/fr/index.html et app1/en/index.html
   const apps = [
     {
       folder: "app1",        // Dossier racine de l'app
+      file: "index.html",    // Nom du fichier HTML (optionnel, défaut: index.html)
       icon: "🚀",
       // Français
       name: "Analyser d'IQI",
@@ -377,9 +378,10 @@
       const a = document.createElement('a');
       a.className = 'card';
       
-      // ═══ URL DYNAMIQUE SELON LA LANGUE ═══
-      // Construit : app1/fr/ ou app1/en/
-      a.href = `${app.folder}/${currentLang}/`;
+      // ═══ URL VERS LE FICHIER HTML ═══
+      // Construit : app1/fr/index.html ou app1/en/index.html
+      const filename = app.file || 'index.html';
+      a.href = `${app.folder}/${currentLang}/${filename}`;
       
       const name = getText(app, 'name');
       const desc = getText(app, 'desc');
